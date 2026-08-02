@@ -1,98 +1,170 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'expo-router';
+import { Pressable, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
+import { EmptyState, ErrorState, LoadingState } from '@/components/query-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { appContentApi, type HomeSection } from '@/lib/app-content';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+const SECTION_HREF: Record<string, string> = {
+  channels: '/live',
+  live_now: '/live',
+  listen: '/listen',
+  read: '/read',
+  saints: '/more',
+  donate: '/more',
+  prayer_requests: '/more',
+};
 
 export default function HomeScreen() {
+  const theme = useTheme();
+
+  const homeQuery = useQuery({
+    queryKey: ['app', 'home'],
+    queryFn: appContentApi.home,
+  });
+
+  const liveNowQuery = useQuery({
+    queryKey: ['app', 'live-now'],
+    queryFn: appContentApi.liveNow,
+  });
+
+  const liveStream = liveNowQuery.data?.data.live_now[0];
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
+    <ScrollView
+      style={{ backgroundColor: theme.background }}
+      contentContainerStyle={styles.scrollContent}
+      refreshControl={
+        <RefreshControl refreshing={homeQuery.isRefetching} onRefresh={() => homeQuery.refetch()} />
+      }>
+      <SafeAreaView edges={['top']} style={{ paddingBottom: BottomTabInset + Spacing.three }}>
+        <ThemedView style={styles.header}>
+          <ThemedText type="small" themeColor="gold" style={styles.eyebrow}>
+            Fr. Morson Livingston
+          </ThemedText>
           <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
+            Today
           </ThemedText>
         </ThemedView>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+        {liveStream ? (
+          <Link href="/live" asChild>
+            <Pressable>
+              <ThemedView style={[styles.liveBanner, { backgroundColor: theme.accent }]}>
+                <ThemedText type="small" style={styles.liveTag}>
+                  ● Live now
+                </ThemedText>
+                <ThemedText type="subtitle" style={styles.liveTitle}>
+                  {liveStream.title}
+                </ThemedText>
+                {liveStream.source_name ? (
+                  <ThemedText type="small" style={styles.liveSource}>
+                    {liveStream.source_name}
+                  </ThemedText>
+                ) : null}
+              </ThemedView>
+            </Pressable>
+          </Link>
+        ) : null}
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+        {homeQuery.isLoading ? <LoadingState /> : null}
+        {homeQuery.isError ? (
+          <ErrorState
+            message={
+              homeQuery.error instanceof Error ? homeQuery.error.message : 'Could not load home.'
+            }
+            onRetry={() => homeQuery.refetch()}
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        ) : null}
+        {homeQuery.data && homeQuery.data.data.sections.length === 0 ? (
+          <EmptyState message="Nothing to show yet." />
+        ) : null}
 
-        {Platform.OS === 'web' && <WebBadge />}
+        {homeQuery.data ? (
+          <ThemedView style={styles.sections}>
+            {homeQuery.data.data.sections.map((section) => (
+              <SectionCard key={section.key} section={section} />
+            ))}
+          </ThemedView>
+        ) : null}
       </SafeAreaView>
-    </ThemedView>
+    </ScrollView>
+  );
+}
+
+function SectionCard({ section }: { section: HomeSection }) {
+  const href = SECTION_HREF[section.key] ?? '/more';
+
+  return (
+    <Link href={href as never} asChild>
+      <Pressable>
+        <ThemedView type="backgroundElement" style={styles.card}>
+          <ThemedText type="subtitle" style={styles.cardTitle}>
+            {section.title}
+          </ThemedText>
+          {typeof section.count === 'number' ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {section.count} available
+            </ThemedText>
+          ) : null}
+        </ThemedView>
+      </Pressable>
+    </Link>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+  scrollContent: {
+    flexGrow: 1,
   },
-  safeArea: {
-    flex: 1,
+  header: {
     paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    paddingTop: Spacing.four,
+    paddingBottom: Spacing.two,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  eyebrow: {
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   title: {
-    textAlign: 'center',
+    fontSize: 32,
+    lineHeight: 38,
   },
-  code: {
+  liveBanner: {
+    marginHorizontal: Spacing.four,
+    marginTop: Spacing.three,
+    borderRadius: Spacing.three,
+    padding: Spacing.four,
+    gap: Spacing.half,
+  },
+  liveTag: {
+    color: '#fff5f0',
     textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  stepContainer: {
+  liveTitle: {
+    color: '#fff5f0',
+  },
+  liveSource: {
+    color: '#fff5f0',
+    opacity: 0.85,
+  },
+  sections: {
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
     gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  },
+  card: {
+    borderRadius: Spacing.three,
+    padding: Spacing.four,
+    gap: Spacing.half,
+  },
+  cardTitle: {
+    fontSize: 19,
   },
 });
