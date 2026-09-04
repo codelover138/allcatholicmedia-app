@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>
+    body{margin:0;background:#E7EAF1;font-family:'Inter',system-ui,sans-serif;}
+    a{color:#046BD2;text-decoration:none}
+    a:hover{color:#0D1F3C}
+    *{box-sizing:border-box}
+    ::-webkit-scrollbar{width:0;height:0}
+  </style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:14px;padding:48px 20px;background:#E7EAF1;">
+  <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:600;letter-spacing:0.06em;color:#718096;text-transform:uppercase;">All Catholic Media — App Prototype</div>
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+    <div style="height:100%;display:flex;flex-direction:column;font-family:'Inter',system-ui,sans-serif;background:{{ theme.outerBg }};color:{{ theme.heading }};">
+
+      <sc-if value="{{ showMainChrome }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;height:100%;min-height:0;">
+          <div style="flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:58px 20px 12px;background:{{ theme.outerBg }};box-shadow:{{ theme.headerShadow }};">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-family:'Playfair Display',serif;font-size:15px;color:#C9A227;">✝</span>
+              <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:16px;color:{{ theme.heading }};">All Catholic Media</span>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ theme.body }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 12 6 8z"></path><path d="M10 18a2 2 0 0 0 4 0"></path></svg>
+          </div>
+
+          <div style="flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;background:{{ theme.contentBg }};">
+
+            <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:18px;display:flex;flex-direction:column;gap:16px;">
+                <sc-if value="{{ showLiveBanner }}" hint-placeholder-val="{{ true }}">
+                  <div onClick="{{ openLive }}" style="cursor:pointer;display:flex;align-items:center;gap:10px;background:radial-gradient(120% 160% at 0% 0%, #172B49 0%, #060E1D 60%);box-shadow:inset 0 0 26px rgba(201,162,39,0.12);border-radius:12px;padding:12px 14px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:#9B1C1C;flex:0 0 auto;box-shadow:0 0 0 3px rgba(155,28,28,0.35);"></span>
+                    <span style="font-size:12px;font-weight:800;letter-spacing:0.08em;color:#fff;">LIVE</span>
+                    <span style="font-size:13px;color:#E7ECF3;font-weight:500;">Sunday Mass from Rome</span>
+                    <svg style="margin-left:auto;flex:0 0 auto;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A227" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                </sc-if>
+
+                <div>
+                  <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:24px;color:{{ theme.heading }};">{{ greeting }}</div>
+                  <div style="font-size:13px;color:{{ theme.muted }};margin-top:2px;">One faith. One family. One place.</div>
+                </div>
+
+                <div onClick="{{ openContinue }}" style="cursor:pointer;border-radius:16px;overflow:hidden;background:{{ theme.cardBg }};border:1px solid {{ theme.borderColor }};box-shadow:{{ theme.cardShadow }};">
+                  <div style="position:relative;height:140px;background:linear-gradient(160deg,{{ theme.borderColor }},{{ theme.softBg }});display:flex;align-items:center;justify-content:center;">
+                    <div style="width:46px;height:46px;border-radius:50%;background:rgba(201,162,39,0.95);display:flex;align-items:center;justify-content:center;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="#0D1F3C"><path d="M6 4l14 8-14 8z"></path></svg>
+                    </div>
+                    <div style="position:absolute;left:0;right:0;bottom:0;height:3px;background:{{ theme.trackBg }};"><div style="width:64%;height:100%;background:#C9A227;"></div></div>
+                  </div>
+                  <div style="padding:12px 14px;">
+                    <div style="font-size:11px;font-weight:700;letter-spacing:0.05em;color:#046BD2;text-transform:uppercase;">Continue Watching</div>
+                    <div style="font-weight:700;font-size:15px;color:{{ theme.heading }};margin-top:3px;">{{ continueItem.title }}</div>
+                    <div style="font-size:12px;color:{{ theme.muted }};margin-top:2px;">{{ continueItem.source }} · {{ continueItem.meta }}</div>
+                  </div>
+                </div>
+
+                <div style="display:flex;gap:12px;">
+                  <div style="flex:1;background:{{ theme.softBg }};border:1px solid {{ theme.borderColor }};border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ theme.heading }}" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v18M7 8h10"></path></svg>
+                    <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:14px;color:{{ theme.heading }};">Daily Rosary</div>
+                    <div style="font-size:11.5px;color:{{ theme.body }};line-height:1.4;">The Sorrowful Mysteries</div>
+                  </div>
+                  <div style="flex:1;background:{{ theme.softBg }};border:1px solid {{ theme.borderColor }};border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#C9A227"><path d="M12 2l3 7 7 .6-5.3 4.6 1.7 6.8L12 17.6 5.6 21l1.7-6.8L2 9.6 9 9z"></path></svg>
+                    <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:14px;color:{{ theme.heading }};">Saint of the Day</div>
+                    <div style="font-size:11.5px;color:{{ theme.body }};line-height:1.4;">St. Thérèse of Lisieux</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:16px;color:{{ theme.heading }};margin-bottom:10px;">Latest</div>
+                  <div style="display:flex;flex-direction:column;gap:10px;">
+                    <sc-for list="{{ latest }}" as="it" hint-placeholder-count="3">
+                      <div onClick="{{ it.onOpen }}" style="cursor:pointer;display:flex;gap:12px;align-items:center;background:{{ theme.cardBg }};border:1px solid {{ theme.borderColor }};box-shadow:{{ theme.cardShadow }};border-radius:12px;padding:10px 12px;">
+                        <div style="flex:0 0 auto;width:44px;height:44px;border-radius:9px;background:{{ theme.softBg }};border:1px solid {{ theme.borderColor }};display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#C9A227"><path d="M6 4l14 8-14 8z"></path></svg></div>
+                        <div style="flex:1;min-width:0;">
+                          <div style="font-size:10.5px;font-weight:700;letter-spacing:0.04em;color:#046BD2;text-transform:uppercase;">{{ it.typeLabel }}</div>
+                          <div style="font-size:13.5px;font-weight:600;color:{{ theme.heading }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ it.title }}</div>
+                          <div style="font-size:11.5px;color:{{ theme.muted }};">{{ it.source }} · {{ it.date }}</div>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isExplore }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:18px;display:flex;flex-direction:column;gap:13px;">
+                <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:22px;color:{{ theme.heading }};">Explore</div>
+                <div style="position:relative;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{ theme.muted }}" stroke-width="2" stroke-linecap="round" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4-4"></path></svg>
+                  <input value="{{ searchQuery }}" onChange="{{ onSearchChange }}" placeholder="Search videos, articles, saints…" style="width:100%;padding:11px 14px 11px 38px;border-radius:10px;border:1px solid {{ theme.borderColor }};background:{{ theme.inputBg }};font-size:14px;color:{{ theme.heading }};outline:none;box-sizing:border-box;"></input>
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <div onClick="{{ pickAll }}" style="{{ chipAllStyle }}">All</div>
+                  <div onClick="{{ pickWatch }}" style="{{ chipWatchStyle }}">Watch</div>
+                  <div onClick="{{ pickListen }}" style="{{ chipListenStyle }}">Listen</div>
+                  <div onClick="{{ pickRead }}" style="{{ chipReadStyle }}">Read</div>
+                  <div onClick="{{ pickSaints }}" style="{{ chipSaintsStyle }}">Saints</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <sc-for list="{{ filteredItems }}" as="it" hint-placeholder-count="6">
+                    <div onClick="{{ it.onOpen }}" style="cursor:pointer;display:flex;gap:12px;align-items:center;background:{{ theme.cardBg }};border:1px solid {{ theme.borderColor }};box-shadow:{{ theme.cardShadow }};border-radius:12px;padding:10px 12px;">
+                      <div style="flex:0 0 auto;width:52px;height:52px;border-radius:10px;background:{{ theme.softBg }};border:1px solid {{ theme.borderColor }};display:flex;align-items:center;justify-content:center;">
+                        <sc-if value="{{ it.isWatch }}" hint-placeholder-val="{{ true }}">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="#C9A227"><path d="M6 4l14 8-14 8z"></path></svg>
+                        </sc-if>
+                        <sc-if value="{{ it.isListen }}" hint-placeholder-val="{{ false }}">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#046BD2" stroke-width="2"><path d="M4 15v-3a8 8 0 0 1 16 0v3"></path><rect x="2" y="14" width="5" height="7" rx="2"></rect><rect x="17" y="14" width="5" height="7" rx="2"></rect></svg>
+                        </sc-if>
+                        <sc-if value="{{ it.isRead }}" hint-placeholder-val="{{ false }}">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ theme.heading }}" stroke-width="2"><path d="M6 3h9l4 4v14H6z"></path><path d="M9 11h7M9 15h7"></path></svg>
+                        </sc-if>
+                        <sc-if value="{{ it.isSaints }}" hint-placeholder-val="{{ false }}">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="#C9A227"><path d="M12 2l3 7 7 .6-5.3 4.6 1.7 6.8L12 17.6 5.6 21l1.7-6.8L2 9.6 9 9z"></path></svg>
+                        </sc-if>
+                      </div>
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-size:10.5px;font-weight:700;letter-spacing:0.04em;color:#046BD2;text-transform:uppercase;">{{ it.typeLabel }}</div>
+                        <div style="font-size:14px;font-weight:600;color:{{ theme.heading }};">{{ it.title }}</div>
+                        <div style="font-size:11.5px;color:{{ theme.muted }};">{{ it.source }} · {{ it.date }} · {{ it.meta }}</div>
+                      </div>
+                      <div onClick="{{ it.onToggleSave }}" style="flex:0 0 auto;padding:4px;cursor:pointer;">
+                        <sc-if value="{{ it.saved }}" hint-placeholder-val="{{ false }}">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="#C9A227" stroke="#C9A227" stroke-width="1.8"><path d="M6 3h12v18l-6-4-6 4z"></path></svg>
+                        </sc-if>
+                        <sc-if value="{{ it.notSaved }}" hint-placeholder-val="{{ true }}">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="{{ theme.heading }}" stroke-width="1.8"><path d="M6 3h12v18l-6-4-6 4z"></path></svg>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isPray }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:18px;display:flex;flex-direction:column;gap:13px;">
+                <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:22px;color:{{ theme.heading }};">Pray</div>
+                <div style="font-size:13.5px;color:{{ theme.body }};line-height:1.5;">A place to bring your heart before God, alone or with the community.</div>
+                <div style="background:{{ theme.softBg }};border:1px solid {{ theme.borderColor }};border-radius:14px;padding:18px;">
+                  <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:16px;color:{{ theme.heading }};">Daily Prayer</div>
+                  <div style="font-size:12.5px;color:{{ theme.body }};margin:6px 0 14px;line-height:1.5;">The Angelus — a moment to pause and remember the Incarnation.</div>
+                  <div style="display:inline-block;background:#C9A227;color:#0D1F3C;font-weight:700;font-size:13px;padding:9px 18px;border-radius:999px;">Pray Now</div>
+                </div>
+                <div style="background:{{ theme.softBg }};border:1px solid {{ theme.borderColor }};border-radius:12px;padding:14px;font-size:12.5px;color:{{ theme.muted }};line-height:1.5;">Prayer requests with private and prayer-team visibility, and praying for others, arrive in the next release.</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isCommunity }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:18px;display:flex;flex-direction:column;gap:13px;">
+                <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:22px;color:{{ theme.heading }};">Community</div>
+                <div style="font-size:13.5px;color:{{ theme.body }};line-height:1.5;">Faithful conversation, moderated with care.</div>
+                <div style="background:{{ theme.cardBg }};border:1px solid {{ theme.borderColor }};box-shadow:{{ theme.cardShadow }};border-radius:12px;padding:14px;">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                    <span style="font-size:10px;font-weight:700;letter-spacing:0.04em;background:#0D1F3C;color:#fff;padding:3px 8px;border-radius:999px;text-transform:uppercase;">Editorial</span>
+                    <span style="font-size:11.5px;color:{{ theme.muted }};">Fr. Morson Livingston</span>
+                  </div>
+                  <div style="font-size:13.5px;color:{{ theme.heading }};line-height:1.5;">"Even in ordinary time, the Lord is close. Take one quiet moment today to thank Him."</div>
+                </div>
+                <div style="background:{{ theme.softBg }};border:1px solid {{ theme.borderColor }};border-radius:12px;padding:14px;font-size:12.5px;color:{{ theme.muted }};line-height:1.5;">Member posts, comments, and the moderated Community feed launch in a later release, after guidelines and reporting tools are in place.</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:18px;display:flex;flex-direction:column;gap:14px;">
+                <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:22px;color:{{ theme.heading }};">Profile</div>
+
+                <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:12px;background:{{ theme.cardBg }};border:1px solid {{ theme.borderColor }};box-shadow:{{ theme.cardShadow }};border-radius:14px;padding:16px;">
+                    <div style="width:52px;height:52px;border-radius:50%;background:{{ theme.softBg }};border:1.5px solid #C9A227;color:{{ theme.heading }};display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;font-size:18px;">{{ userName }}</div>
+                    <div>
+                      <div style="font-weight:700;font-size:15px;color:{{ theme.heading }};">{{ userName }}</div>
+                      <div style="font-size:12px;color:{{ theme.muted }};">Member of the family since 2026</div>
+                    </div>
+                  </div>
+                  <div style="background:{{ theme.cardBg }};border:1px solid {{ theme.borderColor }};box-shadow:{{ theme.cardShadow }};border-radius:14px;overflow:hidden;">
+                    <div style="padding:13px 14px;border-bottom:1px solid {{ theme.borderColor }};font-size:14px;color:{{ theme.heading }};display:flex;align-items:center;gap:10px;">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ theme.heading }}" stroke-width="1.8"><path d="M6 3h12v18l-6-4-6 4z"></path></svg>
+                      <span style="flex:1;">Saved items</span><span style="color:{{ theme.muted }};font-size:13px;">2</span>
+                    </div>
+                    <div style="padding:13px 14px;border-bottom:1px solid {{ theme.borderColor }};font-size:14px;color:{{ theme.heading }};display:flex;align-items:center;gap:10px;">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ theme.heading }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>
+                      <span style="flex:1;">My posts</span><span style="color:{{ theme.muted }};font-size:13px;">0</span>
+                    </div>
+                    <div style="padding:13px 14px;border-bottom:1px solid {{ theme.borderColor }};font-size:14px;color:{{ theme.heading }};display:flex;align-items:center;gap:10px;">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ theme.heading }}" stroke-width="1.8"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+                      <span style="flex:1;">Donation history</span><span style="color:{{ theme.muted }};font-size:13px;">—</span>
+                    </div>
+                    <div style="padding:13px 14px;font-size:14px;color:{{ theme.heading }};display:flex;align-items:center;gap:10px;">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ theme.heading }}" stroke-width="1.8" stroke-linecap="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 12 6 8z"></path><path d="M10 18a2 2 0 0 0 4 0"></path></svg>
+                      <span style="flex:1;">Notifications</span><span style="color:{{ theme.muted }};">›</span>
+                    </div>
+                  </div>
+                  <div onClick="{{ openDonate }}" style="cursor:pointer;text-align:center;background:#C9A227;color:#0D1F3C;font-weight:700;font-size:14.5px;padding:13px;border-radius:999px;">Support the Mission</div>
+                  <div onClick="{{ logout }}" style="cursor:pointer;text-align:center;color:#9B1C1C;font-size:13.5px;font-weight:600;padding:6px;">Sign Out</div>
+                </sc-if>
+
+                <sc-if value="{{ showLoggedOutProfile }}" hint-placeholder-val="{{ true }}">
+                  <div style="background:{{ theme.cardBg }};border:1px solid {{ theme.borderColor }};box-shadow:{{ theme.cardShadow }};border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;">
+                    <span style="font-family:'Playfair Display',serif;font-size:22px;color:#C9A227;">✝</span>
+                    <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:17px;color:{{ theme.heading }};">Welcome back to your faith community</div>
+                    <div style="font-size:12.5px;color:{{ theme.muted }};line-height:1.5;">Sign in to comment, save content across devices, submit prayer requests, and give.</div>
+                    <div onClick="{{ openAuthLogin }}" style="cursor:pointer;width:100%;text-align:center;background:#C9A227;color:#0D1F3C;font-weight:700;font-size:14px;padding:12px;border-radius:999px;">Sign In</div>
+                    <div onClick="{{ openAuthRegister }}" style="cursor:pointer;width:100%;text-align:center;background:{{ theme.softBg }};color:{{ theme.heading }};font-weight:700;font-size:14px;padding:12px;border-radius:999px;">Join the Family</div>
+                  </div>
+                  <div onClick="{{ openDonate }}" style="cursor:pointer;text-align:center;background:{{ theme.cardBg }};border:1px solid {{ theme.heading }};color:{{ theme.heading }};font-weight:700;font-size:14px;padding:12px;border-radius:999px;">Support the Mission</div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+          </div>
+
+          <div style="flex:0 0 auto;display:flex;justify-content:space-around;align-items:center;padding:10px 4px 24px;background:{{ theme.outerBg }};box-shadow:{{ theme.tabBarShadow }};">
+            <div onClick="{{ setTabHome }}" style="{{ tabHomeStyle }}">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"></path><path d="M6 10v9h12v-9"></path></svg>
+              <span style="font-size:10.5px;">Home</span>
+            </div>
+            <div onClick="{{ setTabExplore }}" style="{{ tabExploreStyle }}">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M15 9l-2 6-4-2 2-6z" stroke-linejoin="round"></path></svg>
+              <span style="font-size:10.5px;">Explore</span>
+            </div>
+            <div onClick="{{ setTabPray }}" style="{{ tabPrayStyle }}">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v18M7 8h10"></path></svg>
+              <span style="font-size:10.5px;">Pray</span>
+            </div>
+            <div onClick="{{ setTabCommunity }}" style="{{ tabCommunityStyle }}">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"></circle><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"></path><circle cx="17" cy="9" r="2.3"></circle><path d="M15.5 14a5 5 0 0 1 5.5 6"></path></svg>
+              <span style="font-size:10.5px;">Community</span>
+            </div>
+            <div onClick="{{ setTabProfile }}" style="{{ tabProfileStyle }}">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"></path></svg>
+              <span style="font-size:10.5px;">Profile</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showLoggedOutProfile }}" hint-placeholder-val="{{ false }}">
+      </sc-if>
+
+      <sc-if value="{{ showAuth }}" hint-placeholder-val="{{ false }}">
+        <div style="height:100%;display:flex;flex-direction:column;background:{{ theme.outerBg }};">
+          <div style="flex:0 0 auto;display:flex;align-items:center;padding:16px 16px 8px;">
+            <div onClick="{{ closeAuth }}" style="cursor:pointer;padding:6px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ theme.heading }}" stroke-width="2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"></path></svg>
+            </div>
+          </div>
+          <div style="flex:1;overflow:auto;padding:8px 24px 32px;display:flex;flex-direction:column;gap:20px;">
+            <div>
+              <span style="font-family:'Playfair Display',serif;font-size:14px;color:#C9A227;">✝</span>
+              <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:24px;color:{{ theme.heading }};margin-top:8px;">
+                <sc-if value="{{ isLoginMode }}" hint-placeholder-val="{{ true }}">Welcome back to your faith community</sc-if>
+                <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">Join the All Catholic Media family</sc-if>
+              </div>
+            </div>
+            <div style="display:flex;gap:20px;border-bottom:1px solid {{ theme.borderColor }};">
+              <div onClick="{{ setLoginMode }}" style="{{ loginTabStyle }}">Sign In</div>
+              <div onClick="{{ setRegisterMode }}" style="{{ registerTabStyle }}">Register</div>
+            </div>
+            <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12.5px;font-weight:600;color:{{ theme.body }};">Name</label>
+                <input value="{{ authName }}" onChange="{{ onAuthName }}" placeholder="Your name" style="padding:11px 13px;border-radius:10px;border:1px solid {{ theme.borderColor }};background:{{ theme.inputBg }};color:{{ theme.heading }};font-size:14px;outline:none;"></input>
+              </div>
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label style="font-size:12.5px;font-weight:600;color:{{ theme.body }};">Email</label>
+              <input value="{{ authEmail }}" onChange="{{ onAuthEmail }}" placeholder="you@email.com" style="padding:11px 13px;border-radius:10px;border:1px solid {{ theme.borderColor }};background:{{ theme.inputBg }};color:{{ theme.heading }};font-size:14px;outline:none;"></input>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <label style="font-size:12.5px;font-weight:600;color:{{ theme.body }};">Password</label>
+              <input type="password" value="{{ authPassword }}" onChange="{{ onAuthPassword }}" placeholder="••••••••" style="padding:11px 13px;border-radius:10px;border:1px solid {{ theme.borderColor }};background:{{ theme.inputBg }};color:{{ theme.heading }};font-size:14px;outline:none;"></input>
+            </div>
+            <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:11.5px;color:{{ theme.muted }};line-height:1.5;">By registering you agree to our community guidelines and privacy policy.</div>
+            </sc-if>
+            <div onClick="{{ submitAuth }}" style="cursor:pointer;text-align:center;background:#C9A227;color:#0D1F3C;font-weight:700;font-size:14.5px;padding:13px;border-radius:999px;margin-top:8px;">
+              <sc-if value="{{ isLoginMode }}" hint-placeholder-val="{{ true }}">Sign In</sc-if>
+              <sc-if value="{{ isRegisterMode }}" hint-placeholder-val="{{ false }}">Join the Family</sc-if>
+            </div>
+            <div style="text-align:center;font-size:12px;color:{{ theme.muted }};">You can browse Watch, Listen, Read and Saints without an account.</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showDonate }}" hint-placeholder-val="{{ false }}">
+        <div style="height:100%;display:flex;flex-direction:column;background:{{ theme.outerBg }};">
+          <div style="flex:0 0 auto;display:flex;align-items:center;padding:16px 16px 8px;">
+            <div onClick="{{ closeDonate }}" style="cursor:pointer;padding:6px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ theme.heading }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+            </div>
+          </div>
+
+          <sc-if value="{{ donateSuccess }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;">
+              <div style="width:56px;height:56px;border-radius:50%;background:#0D1F3C;display:flex;align-items:center;justify-content:center;">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9A227" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"></path></svg>
+              </div>
+              <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:19px;color:{{ theme.heading }};">Thank you for supporting the mission</div>
+              <div style="font-size:13px;color:{{ theme.muted }};">{{ donateFinalLabel }} received — a receipt has been sent to your email.</div>
+              <div onClick="{{ finishDonate }}" style="cursor:pointer;margin-top:8px;background:#0D1F3C;color:#fff;font-weight:700;font-size:14px;padding:12px 28px;border-radius:999px;">Done</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ donateSuccess }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;overflow:auto;padding:8px 24px 32px;display:flex;flex-direction:column;gap:18px;">
+              <div>
+                <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:24px;color:{{ theme.heading }};">Support the Mission</div>
+                <div style="font-size:13px;color:{{ theme.body }};line-height:1.5;margin-top:6px;">Your gift keeps Mass, prayer, and formation content free and reaching families around the world.</div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <div onClick="{{ setOneTime }}" style="{{ oneTimeStyle }}">One-time</div>
+                <div onClick="{{ setRecurring }}" style="{{ recurringStyle }}">Monthly</div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <sc-for list="{{ donateAmounts }}" as="a" hint-placeholder-count="4">
+                  <div onClick="{{ a.onPick }}" style="{{ a.style }}">{{ a.label }}</div>
+                </sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <label style="font-size:12.5px;font-weight:600;color:{{ theme.body }};">Custom amount</label>
+                <input value="{{ donateCustom }}" onChange="{{ onCustomAmount }}" placeholder="$" style="padding:11px 13px;border-radius:10px;border:1px solid {{ theme.borderColor }};background:{{ theme.inputBg }};color:{{ theme.heading }};font-size:14px;outline:none;"></input>
+              </div>
+              <div style="font-size:11.5px;color:{{ theme.muted }};line-height:1.5;display:flex;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ theme.muted }}" stroke-width="2" style="flex:0 0 auto;margin-top:1px;"><rect x="5" y="10" width="14" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+                Payments are securely processed by our payment provider. We never store your card details.
+              </div>
+              <div onClick="{{ submitDonation }}" style="cursor:pointer;text-align:center;background:#C9A227;color:#0D1F3C;font-weight:700;font-size:14.5px;padding:13px;border-radius:999px;">Give {{ donateFinalLabel }}</div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="height:100%;display:flex;flex-direction:column;background:{{ theme.outerBg }};">
+          <div style="flex:1;overflow:auto;">
+            <div style="position:relative;height:220px;background:linear-gradient(160deg,{{ theme.borderColor }},{{ theme.softBg }});display:flex;align-items:flex-end;">
+              <div onClick="{{ closeDetail }}" style="position:absolute;top:16px;left:16px;background:{{ theme.scrimCircle }};border-radius:50%;padding:8px;cursor:pointer;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>
+              </div>
+              <div style="width:100%;padding:14px 20px;background:linear-gradient(180deg,transparent,rgba(13,31,60,0.55));">
+                <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#C9A227;text-transform:uppercase;">{{ selectedContent.typeLabel }}</div>
+              </div>
+            </div>
+            <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+              <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:21px;color:{{ theme.heading }};line-height:1.3;">{{ selectedContent.title }}</div>
+              <div style="font-size:12.5px;color:{{ theme.muted }};">{{ selectedContent.source }} · {{ selectedContent.date }} · {{ selectedContent.meta }}</div>
+              <div style="display:flex;gap:10px;">
+                <div style="flex:1;text-align:center;background:#C9A227;color:#0D1F3C;font-weight:700;font-size:13.5px;padding:11px;border-radius:999px;">Open</div>
+                <div onClick="{{ toggleSelSave }}" style="flex:0 0 auto;width:44px;height:44px;border-radius:50%;border:1px solid {{ theme.borderColor }};display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                  <svg width="17" height="17" viewBox="0 0 24 24" stroke="{{ theme.heading }}" stroke-width="1.8" fill="none"><path d="M6 3h12v18l-6-4-6 4z"></path></svg>
+                </div>
+              </div>
+              <div style="font-size:13.5px;color:{{ theme.body }};line-height:1.6;">A reflection on this Sunday's readings, offered in the spirit of prayer and formation — brought to you as part of the All Catholic Media library.</div>
+              <div style="border-top:1px solid {{ theme.borderColor }};padding-top:14px;">
+                <div style="font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:{{ theme.heading }};margin-bottom:8px;">Discussion</div>
+                <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{ false }}">
+                  <input placeholder="Share a reflection, encouragement, or prayer." style="width:100%;padding:11px 13px;border-radius:10px;border:1px solid {{ theme.borderColor }};background:{{ theme.inputBg }};color:{{ theme.heading }};font-size:13.5px;outline:none;"></input>
+                </sc-if>
+                <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{ true }}">
+                  <div onClick="{{ openAuthLogin }}" style="cursor:pointer;background:{{ theme.softBg }};border:1px solid {{ theme.borderColor }};border-radius:10px;padding:12px;font-size:13px;color:#046BD2;font-weight:600;text-align:center;">Sign in to join the conversation</div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </x-import>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: {&quot;width&quot;: 480, &quot;height&quot;: 980},
+  &quot;startTab&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;home&quot;, &quot;options&quot;: [&quot;home&quot;, &quot;explore&quot;, &quot;profile&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Demo&quot;},
+  &quot;liveNow&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Demo&quot;},
+  &quot;loggedInDemo&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Demo&quot;},
+  &quot;darkMode&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Theme&quot;}
+}">
+class Component extends DCLogic {
+  items = [
+    { id: 1, type: 'watch', typeLabel: 'Watch', title: 'Sunday Mass with Fr. Morson', source: 'All Catholic Media', date: 'Sep 3', meta: '52 min' },
+    { id: 2, type: 'listen', typeLabel: 'Listen', title: 'The Rosary: Sorrowful Mysteries', source: 'Daily Prayer', date: 'Sep 4', meta: '22 min' },
+    { id: 3, type: 'read', typeLabel: 'Read', title: 'Finding Peace in Ordinary Time', source: 'Fr. Morson Livingston', date: 'Sep 2', meta: '6 min read' },
+    { id: 4, type: 'saints', typeLabel: 'Saints', title: 'St. Thérèse of Lisieux', source: 'Saint of the Day', date: 'Sep 4', meta: '4 min read' },
+    { id: 5, type: 'watch', typeLabel: 'Watch', title: 'Adoration from the National Shrine', source: 'Live Partner', date: 'Sep 1', meta: '1 hr 10 min' },
+    { id: 6, type: 'listen', typeLabel: 'Listen', title: 'Scripture Reflection: Luke 15', source: 'Weekly Homily', date: 'Aug 31', meta: '18 min' },
+    { id: 7, type: 'read', typeLabel: 'Read', title: "A Beginner's Guide to the Examen", source: 'Formation', date: 'Aug 29', meta: '5 min read' },
+    { id: 8, type: 'saints', typeLabel: 'Saints', title: 'St. Joseph the Worker', source: 'Saints', date: 'Aug 27', meta: '3 min read' },
+  ];
+
+  constructor(props) {
+    super(props);
+    const start = props.startTab || 'home';
+    const loggedIn = !!props.loggedInDemo;
+    this.state = {
+      tab: start,
+      loggedIn,
+      userName: loggedIn ? 'Maria' : '',
+      showAuth: false,
+      authMode: 'login',
+      authName: '', authEmail: '', authPassword: '',
+      showDonate: false,
+      donateSuccess: false,
+      donateAmount: 25,
+      donateCustom: '',
+      donateRecurring: false,
+      selectedContent: null,
+      savedIds: [],
+      exploreFilter: 'all',
+      searchQuery: '',
+    };
+  }
+
+  setTab(t) { this.setState({ tab: t }); }
+  openAuth(mode) { this.setState({ showAuth: true, authMode: mode }); }
+  closeAuth() { this.setState({ showAuth: false }); }
+  setAuthMode(m) { this.setState({ authMode: m }); }
+  submitAuth() {
+    const name = this.state.authName || (this.state.authMode === 'register' ? 'Friend' : 'Maria');
+    this.setState({ loggedIn: true, userName: name, showAuth: false, authName: '', authEmail: '', authPassword: '' });
+  }
+  logout() { this.setState({ loggedIn: false, userName: '', tab: 'profile' }); }
+  openDonate() { this.setState({ showDonate: true, donateSuccess: false }); }
+  closeDonate() { this.setState({ showDonate: false }); }
+  selectAmount(v) { this.setState({ donateAmount: v, donateCustom: '' }); }
+  toggleSave(id) {
+    this.setState(s => ({
+      savedIds: s.savedIds.includes(id) ? s.savedIds.filter(x => x !== id) : [...s.savedIds, id],
+    }));
+  }
+  openDetail(item) { this.setState({ selectedContent: item }); }
+  closeDetail() { this.setState({ selectedContent: null }); }
+  setFilter(f) { this.setState({ exploreFilter: f }); }
+
+  renderVals() {
+    const s = this.state;
+    const NAVY = '#0D1F3C', GOLD = '#C9A227', MUTED = '#718096', BORDER = '#DCE4F0';
+    const dark = this.props.darkMode ?? true;
+    const theme = {
+      outerBg: dark ? '#131B2E' : '#FFFFFF',
+      contentBg: dark ? '#0F1830' : '#F7F8FB',
+      headerShadow: dark ? '0 1px 0 #26365A' : '0 1px 0 #DCE4F0',
+      tabBarShadow: dark ? '0 -1px 0 #26365A' : '0 -2px 10px rgba(13,31,60,0.05)',
+      cardBg: dark ? '#1B2740' : '#FFFFFF',
+      cardShadow: dark ? 'none' : '0 2px 8px rgba(13,31,60,0.05)',
+      softBg: dark ? '#212F4E' : '#F0F4FB',
+      borderColor: dark ? '#2A3B5C' : '#DCE4F0',
+      heading: dark ? '#F3F6FA' : NAVY,
+      body: dark ? '#B9C4D6' : '#475569',
+      muted: dark ? '#8A98B3' : MUTED,
+      inputBg: dark ? '#1B2740' : '#FFFFFF',
+      trackBg: dark ? 'rgba(255,255,255,0.14)' : 'rgba(13,31,60,0.12)',
+      scrimCircle: dark ? 'rgba(255,255,255,0.15)' : 'rgba(13,31,60,0.65)',
+    };
+    const tabBase = { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer' };
+    const activeTabStyle = { ...tabBase, color: theme.heading, fontWeight: 700 };
+    const inactiveTabStyle = { ...tabBase, color: theme.muted, fontWeight: 500 };
+    const goldActive = { background: GOLD, color: NAVY, border: '1px solid ' + GOLD };
+    const neutralInactive = { background: theme.cardBg, color: theme.body, border: '1px solid ' + theme.borderColor };
+    const chipBase = { cursor: 'pointer', padding: '7px 14px', borderRadius: 999, fontSize: 12.5, fontWeight: 600 };
+    const chipActive = { ...goldActive, ...chipBase };
+    const chipInactive = { ...neutralInactive, ...chipBase };
+    const amountBase = { textAlign: 'center', padding: 16, borderRadius: 12, fontWeight: 700, fontSize: 17, cursor: 'pointer' };
+    const segBase = { flex: 1, textAlign: 'center', padding: 9, borderRadius: 999, border: '1px solid ' + BORDER, fontSize: 13, fontWeight: 700, cursor: 'pointer' };
+    const tabModeBase = { cursor: 'pointer', padding: '8px 0', fontSize: 14, fontWeight: 700 };
+
+    let filtered = this.items.filter(it => s.exploreFilter === 'all' || it.type === s.exploreFilter);
+    if (s.searchQuery.trim()) {
+      const q = s.searchQuery.trim().toLowerCase();
+      filtered = filtered.filter(it => it.title.toLowerCase().includes(q) || it.source.toLowerCase().includes(q));
+    }
+    filtered = filtered.map(it => ({
+      ...it,
+      saved: s.savedIds.includes(it.id),
+      notSaved: !s.savedIds.includes(it.id),
+      isWatch: it.type === 'watch',
+      isListen: it.type === 'listen',
+      isRead: it.type === 'read',
+      isSaints: it.type === 'saints',
+      onOpen: () => this.openDetail(it),
+      onToggleSave: (e) => { e.stopPropagation(); this.toggleSave(it.id); },
+    }));
+
+    const latest = this.items.slice(0, 3).map(it => ({ ...it, onOpen: () => this.openDetail(it) }));
+
+    const donateAmounts = [10, 25, 50, 100].map(v => {
+      const active = !s.donateCustom && s.donateAmount === v;
+      return { value: v, label: '$' + v, style: { ...(active ? goldActive : neutralInactive), ...amountBase }, onPick: () => this.selectAmount(v) };
+    });
+
+    const liveItem = { id: 'live', type: 'watch', typeLabel: 'Watch', title: 'Live: Sunday Mass from Rome', source: 'Vatican Media · Live', date: 'Now', meta: 'Live' };
+    const continueItem = this.items[0];
+    const sel = s.selectedContent;
+    const showMainChrome = !s.showAuth && !s.showDonate && !sel;
+
+    return {
+      theme,
+      showMainChrome,
+      isHome: showMainChrome && s.tab === 'home',
+      isExplore: showMainChrome && s.tab === 'explore',
+      isPray: showMainChrome && s.tab === 'pray',
+      isCommunity: showMainChrome && s.tab === 'community',
+      isProfile: showMainChrome && s.tab === 'profile',
+      showAuth: s.showAuth,
+      showDonate: s.showDonate,
+      showDetail: !!sel,
+      showLoggedOutProfile: showMainChrome && s.tab === 'profile' && !s.loggedIn,
+
+      loggedIn: s.loggedIn,
+      userName: s.userName ? s.userName.slice(0, 1).toUpperCase() : '',
+      greeting: 'Peace be with you' + (s.loggedIn && s.userName ? ', ' + s.userName : ''),
+      showLiveBanner: this.props.liveNow ?? true,
+      openLive: () => this.openDetail(liveItem),
+      continueItem,
+      openContinue: () => this.openDetail(continueItem),
+      latest,
+
+      tabHomeStyle: s.tab === 'home' ? activeTabStyle : inactiveTabStyle,
+      tabExploreStyle: s.tab === 'explore' ? activeTabStyle : inactiveTabStyle,
+      tabPrayStyle: s.tab === 'pray' ? activeTabStyle : inactiveTabStyle,
+      tabCommunityStyle: s.tab === 'community' ? activeTabStyle : inactiveTabStyle,
+      tabProfileStyle: s.tab === 'profile' ? activeTabStyle : inactiveTabStyle,
+      setTabHome: () => this.setTab('home'),
+      setTabExplore: () => this.setTab('explore'),
+      setTabPray: () => this.setTab('pray'),
+      setTabCommunity: () => this.setTab('community'),
+      setTabProfile: () => this.setTab('profile'),
+
+      searchQuery: s.searchQuery,
+      onSearchChange: (e) => this.setState({ searchQuery: e.target.value }),
+      filteredItems: filtered,
+      chipAllStyle: s.exploreFilter === 'all' ? chipActive : chipInactive,
+      chipWatchStyle: s.exploreFilter === 'watch' ? chipActive : chipInactive,
+      chipListenStyle: s.exploreFilter === 'listen' ? chipActive : chipInactive,
+      chipReadStyle: s.exploreFilter === 'read' ? chipActive : chipInactive,
+      chipSaintsStyle: s.exploreFilter === 'saints' ? chipActive : chipInactive,
+      pickAll: () => this.setFilter('all'),
+      pickWatch: () => this.setFilter('watch'),
+      pickListen: () => this.setFilter('listen'),
+      pickRead: () => this.setFilter('read'),
+      pickSaints: () => this.setFilter('saints'),
+
+      openAuthLogin: () => this.openAuth('login'),
+      openAuthRegister: () => this.openAuth('register'),
+      closeAuth: () => this.closeAuth(),
+      isLoginMode: s.authMode === 'login',
+      isRegisterMode: s.authMode === 'register',
+      loginTabStyle: { ...tabModeBase, color: s.authMode === 'login' ? theme.heading : theme.muted, borderBottom: s.authMode === 'login' ? '2px solid ' + GOLD : '2px solid transparent' },
+      registerTabStyle: { ...tabModeBase, color: s.authMode === 'register' ? theme.heading : theme.muted, borderBottom: s.authMode === 'register' ? '2px solid ' + GOLD : '2px solid transparent' },
+      setLoginMode: () => this.setAuthMode('login'),
+      setRegisterMode: () => this.setAuthMode('register'),
+      authName: s.authName,
+      authEmail: s.authEmail,
+      authPassword: s.authPassword,
+      onAuthName: (e) => this.setState({ authName: e.target.value }),
+      onAuthEmail: (e) => this.setState({ authEmail: e.target.value }),
+      onAuthPassword: (e) => this.setState({ authPassword: e.target.value }),
+      submitAuth: () => this.submitAuth(),
+
+      openDonate: () => this.openDonate(),
+      closeDonate: () => this.closeDonate(),
+      donateSuccess: s.donateSuccess,
+      donateAmounts,
+      donateCustom: s.donateCustom,
+      onCustomAmount: (e) => this.setState({ donateCustom: e.target.value }),
+      oneTimeStyle: { ...segBase, border: '1px solid ' + theme.borderColor, ...(!s.donateRecurring ? { background: NAVY, color: '#fff' } : { background: theme.cardBg, color: theme.body }) },
+      recurringStyle: { ...segBase, border: '1px solid ' + theme.borderColor, ...(s.donateRecurring ? { background: NAVY, color: '#fff' } : { background: theme.cardBg, color: theme.body }) },
+      setOneTime: () => this.setState({ donateRecurring: false }),
+      setRecurring: () => this.setState({ donateRecurring: true }),
+      submitDonation: () => this.setState({ donateSuccess: true }),
+      finishDonate: () => this.setState({ showDonate: false, donateSuccess: false }),
+      donateFinalLabel: '$' + (s.donateCustom || s.donateAmount) + (s.donateRecurring ? '/mo' : ''),
+
+      selectedContent: sel || {},
+      closeDetail: () => this.closeDetail(),
+      toggleSelSave: sel ? (() => this.toggleSave(sel.id)) : (() => {}),
+
+      logout: () => this.logout(),
+    };
+  }
+}
+</script>
+</body>
+</html>

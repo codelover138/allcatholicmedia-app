@@ -10,31 +10,31 @@ export default function AppTabs() {
   return (
     <NativeTabs
       backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.accent } }}>
+      indicatorColor={colors.goldSoft}
+      labelStyle={{ selected: { color: colors.gold } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="house" md="home" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="live">
-        <NativeTabs.Trigger.Label>Live</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="dot.radiowaves.left.and.right" md="live_tv" />
+      <NativeTabs.Trigger name="explore">
+        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="safari" md="explore" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="listen">
-        <NativeTabs.Trigger.Label>Listen</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="headphones" md="headphones" />
+      <NativeTabs.Trigger name="pray">
+        <NativeTabs.Trigger.Label>Pray</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="cross" md="church" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="read">
-        <NativeTabs.Trigger.Label>Read</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="book" md="menu_book" />
+      <NativeTabs.Trigger name="community">
+        <NativeTabs.Trigger.Label>Community</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="person.2" md="groups" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="more">
-        <NativeTabs.Trigger.Label>More</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="ellipsis" md="more_horiz" />
+      <NativeTabs.Trigger name="profile">
+        <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="person" md="person" />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

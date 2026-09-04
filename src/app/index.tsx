@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { appContentApi, type HomeSection } from '@/lib/app-content';
+import { HomeScreenPrototype } from '@/components/home-screen-prototype';
 
 const SECTION_HREF: Record<string, string> = {
   channels: '/live',
@@ -21,6 +22,10 @@ const SECTION_HREF: Record<string, string> = {
 };
 
 export default function HomeScreen() {
+  return <HomeScreenPrototype />;
+}
+
+function LegacyHomeScreen() {
   const theme = useTheme();
 
   const homeQuery = useQuery({
