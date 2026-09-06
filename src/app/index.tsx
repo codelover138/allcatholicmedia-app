@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { useRouter, type Href } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
@@ -10,10 +10,21 @@ import { ErrorState, LoadingState } from '@/components/query-state';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { appContentApi, type VideoDTO } from '@/lib/app-content';
+import { ScreenBackground } from '@/components/screen-background';
+import { useVideoPlayer } from '@/components/video-player';
+import { appContentApi, mediaUrl, type VideoDTO } from '@/lib/app-content';
 import { formatDuration, formatShortDate } from '@/lib/format';
 
-// Fallback for the Daily Rosary card when the /read Daily Rosary spotlight is
+type HeroVideo = {
+  title: string;
+  channel: string;
+  duration: string | null;
+  thumbnail: string | null;
+  published_at: string | null;
+  video_url: string | null;
+};
+
+// Fallback for the Daily Rosary card when the home spotlights endpoint is
 // unavailable: the traditional weekday assignment of the Rosary mysteries.
 const ROSARY_MYSTERIES = [
   'The Glorious Mysteries', // Sun
@@ -25,45 +36,149 @@ const ROSARY_MYSTERIES = [
   'The Joyful Mysteries', // Sat
 ];
 
+// The ministry's guiding verse — the Great Commission — shown in the founder card.
+const FOUNDER_VERSE = {
+  text: 'Go into all the world and proclaim the Gospel to the whole creation.',
+  source: 'Mark 16:15',
+};
+
 export default function HomeScreen() {
   const theme = useTheme();
+  const router = useRouter();
+  const { play } = useVideoPlayer();
 
   const liveQuery = useQuery({ queryKey: ['app', 'live-now'], queryFn: appContentApi.liveNow });
   const channelsQuery = useQuery({ queryKey: ['app', 'channels'], queryFn: appContentApi.channels });
   const saintsQuery = useQuery({ queryKey: ['app', 'saints'], queryFn: () => appContentApi.saints() });
   const readQuery = useQuery({ queryKey: ['app', 'read'], queryFn: () => appContentApi.read() });
   const listenQuery = useQuery({ queryKey: ['app', 'listen'], queryFn: () => appContentApi.listen() });
-  // Category 12 = "Daily Rosary" — the same spotlight the website home page pulls.
+  // Rosary / Saint / Vatican News, resolved server-side exactly like the website
+  // home page's theme shortcodes. Category 12 = "Daily Rosary".
+  const spotlightsQuery = useQuery({
+    queryKey: ['app', 'home-spotlights'],
+    queryFn: appContentApi.homeSpotlights,
+  });
+  // Daily Rosary = latest upload from the "Daily Rosary Meditations" YouTube
+  // channel — the same source the website home page pulls from. Fetched straight
+  // from YouTube's public feed; the CMS category feed is a fallback.
+  const rosaryVideoQuery = useQuery({
+    queryKey: ['app', 'daily-rosary-video'],
+    queryFn: appContentApi.latestRosaryVideo,
+    enabled: !spotlightsQuery.data?.data?.rosary,
+    staleTime: 1000 * 60 * 30,
+  });
   const rosaryQuery = useQuery({
     queryKey: ['app', 'read', 'daily-rosary'],
     queryFn: () => appContentApi.read({ category: 12 }),
+    enabled: !spotlightsQuery.data?.data?.rosary && !rosaryVideoQuery.data,
   });
 
-  const queries = [liveQuery, channelsQuery, saintsQuery, readQuery, listenQuery, rosaryQuery];
-  const refetchAll = () => queries.forEach((q) => q.refetch());
+  const queries = [liveQuery, channelsQuery, saintsQuery, readQuery, listenQuery, spotlightsQuery];
+  const refetchAll = () =>
+    [...queries, rosaryVideoQuery, rosaryQuery].forEach((q) => q.refetch());
+
+  const spotlights = spotlightsQuery.data?.data;
 
   const live = liveQuery.data?.data.live_now?.[0];
-  const saint = saintsQuery.data?.data.saints?.[0];
   const article = readQuery.data?.data.articles?.[0];
   const show = listenQuery.data?.data.shows?.[0];
-  const rosaryPost = rosaryQuery.data?.data.articles?.[0];
+
+  // The CMS category imports a batch of episodes with one identical timestamp;
+  // break ties on id so the fallback matches the website's pick.
+  const fallbackRosary = useMemo(() => {
+    const articles = rosaryQuery.data?.data.articles ?? [];
+    return [...articles].sort(
+      (a, b) =>
+        (b.published_at ?? '').localeCompare(a.published_at ?? '') || b.id - a.id,
+    )[0];
+  }, [rosaryQuery.data]);
+
+  // Same source via the deployed /channels endpoint (works on web, no CORS) —
+  // present once the "daily-rosary-meditations" channel is synced on the backend.
+  const rosaryChannelVideo = useMemo(() => {
+    const channel = (channelsQuery.data?.data ?? []).find(
+      (c) => c.slug === 'daily-rosary-meditations',
+    );
+    const v = channel?.latest_video;
+    return v
+      ? {
+          title: v.title,
+          video_url: v.video_url,
+          embed_url: v.embed_url,
+          thumbnail: v.thumbnail,
+          published_at: v.published_at,
+          channel: channel.name,
+        }
+      : null;
+  }, [channelsQuery.data]);
+
+  const rosaryVideo =
+    spotlights?.rosary ?? rosaryVideoQuery.data ?? rosaryChannelVideo ?? null;
+  const rosaryVideoUrl = rosaryVideo?.video_url ?? fallbackRosary?.url;
+  const rosaryTitle = rosaryVideo?.title ?? fallbackRosary?.title;
   const rosaryLabel =
-    rosaryPost?.title.replace(/^\[Daily Rosary Meditations\]\s*/i, '') ??
+    rosaryTitle?.replace(/^\[Daily Rosary Meditations\]\s*/i, '') ??
     ROSARY_MYSTERIES[new Date().getDay()];
 
-  const latestVideo = useMemo<(VideoDTO & { channel: string }) | undefined>(() => {
-    const videos = (channelsQuery.data?.data ?? [])
-      .flatMap((c) => (c.latest_video ? [{ ...c.latest_video, channel: c.name }] : []))
-      .sort((a, b) => (b.published_at ?? '').localeCompare(a.published_at ?? ''));
-    return videos[0];
-  }, [channelsQuery.data]);
+  // Prefer the server-resolved saint (today's feast when there is one); fall
+  // back to the newest-dated entry from the alphabetical /saints list.
+  const saint = useMemo(() => {
+    if (spotlights?.saint) return spotlights.saint;
+    const saints = saintsQuery.data?.data.saints ?? [];
+    return [...saints].sort((a, b) =>
+      (b.published_at ?? '').localeCompare(a.published_at ?? ''),
+    )[0];
+  }, [spotlights?.saint, saintsQuery.data]);
+
+  const rosaryImage = rosaryVideo?.thumbnail ?? null;
+  const saintImage = mediaUrl(saint?.image);
+
+  // The founder's own YouTube channel avatar, reused as his portrait here.
+  const founderAvatar = useMemo(
+    () =>
+      (channelsQuery.data?.data ?? []).find((c) => /morson/i.test(c.name))?.thumbnail ?? null,
+    [channelsQuery.data],
+  );
+
+  const channelVideos = useMemo<(VideoDTO & { channel: string })[]>(
+    () =>
+      (channelsQuery.data?.data ?? [])
+        .flatMap((c) => (c.latest_video ? [{ ...c.latest_video, channel: c.name }] : []))
+        .sort((a, b) => (b.published_at ?? '').localeCompare(a.published_at ?? '')),
+    [channelsQuery.data],
+  );
+
+  // The website's video spotlight = latest upload from the "vatican-news"
+  // YouTube channel ([channel-spotlight channel="vatican-news"]).
+  const vaticanVideo = useMemo<HeroVideo | undefined>(() => {
+    const v = spotlights?.vatican_news;
+    if (v) {
+      return {
+        title: v.title,
+        channel: v.channel.name,
+        duration: v.duration,
+        thumbnail: v.thumbnail,
+        published_at: v.published_at,
+        video_url: v.video_url,
+      };
+    }
+    const channel = (channelsQuery.data?.data ?? []).find((c) => c.slug === 'vatican-news');
+    return channel?.latest_video
+      ? { ...channel.latest_video, channel: channel.name }
+      : undefined;
+  }, [spotlights?.vatican_news, channelsQuery.data]);
+
+  const heroVideo: HeroVideo | undefined = vaticanVideo ?? channelVideos[0];
+  const watchVideo =
+    channelVideos.find((v) => v.title !== heroVideo?.title) ?? channelVideos[0];
 
   const initialLoading = queries.every((q) => q.isLoading);
   const allFailed = queries.every((q) => q.isError);
 
   return (
+    <ScreenBackground>
     <ScrollView
-      style={{ backgroundColor: theme.background }}
+      style={styles.transparent}
       contentContainerStyle={styles.scroll}
       refreshControl={
         <RefreshControl
@@ -90,20 +205,37 @@ export default function HomeScreen() {
               </ThemedText>
             </View>
 
-            <ContinueCard video={latestVideo} />
+            <FounderCard avatar={founderAvatar} quote={FOUNDER_VERSE} />
+
+            <ContinueCard
+              video={heroVideo}
+              label={vaticanVideo ? 'FROM VATICAN NEWS' : 'CONTINUE WATCHING'}
+              onPress={() =>
+                heroVideo?.video_url
+                  ? play(heroVideo.video_url, heroVideo.title)
+                  : router.push('/live')
+              }
+            />
 
             <View style={styles.dualCards}>
-              <MiniCard
-                href="/pray"
-                symbol="✝"
-                title="Daily Rosary"
-                subtitle={rosaryLabel}
+              <PreviewCard
+                label="DAILY ROSARY"
+                title={rosaryLabel}
+                image={rosaryImage}
+                fallbackSymbol="✝"
+                isVideo={!!rosaryVideoUrl}
+                onPress={() =>
+                  rosaryVideoUrl ? play(rosaryVideoUrl, rosaryLabel) : router.push('/pray')
+                }
               />
-              <MiniCard
-                href="/more"
-                symbol="✦"
-                title="Saint of the Day"
-                subtitle={saint?.title ?? 'A saint to discover'}
+              <PreviewCard
+                label="SAINT OF THE DAY"
+                title={saint?.title ?? 'A saint to discover'}
+                image={saintImage}
+                fallbackSymbol="✦"
+                onPress={() =>
+                  saint?.url ? Linking.openURL(saint.url) : router.push('/more')
+                }
               />
             </View>
 
@@ -111,26 +243,32 @@ export default function HomeScreen() {
               <ThemedText style={styles.latestHeading}>Latest</ThemedText>
               <View style={styles.latestList}>
                 <LatestRow
-                  href="/live"
                   glyph="▶"
                   glyphColor="gold"
                   label="Watch"
-                  title={latestVideo?.title ?? 'Sunday Mass and daily reflections'}
+                  title={watchVideo?.title ?? 'Sunday Mass and daily reflections'}
                   meta={joinMeta(
-                    latestVideo?.channel ?? 'All Catholic Media',
-                    formatShortDate(latestVideo?.published_at),
+                    watchVideo?.channel ?? 'All Catholic Media',
+                    formatShortDate(watchVideo?.published_at),
                   )}
+                  image={watchVideo?.thumbnail}
+                  isVideo
+                  onPress={() =>
+                    watchVideo?.video_url
+                      ? play(watchVideo.video_url, watchVideo.title)
+                      : router.push('/live')
+                  }
                 />
                 <LatestRow
-                  href="/listen"
                   glyph="♪"
                   glyphColor="blue"
                   label="Listen"
                   title={show?.name ?? 'Pray the Rosary with us'}
                   meta={show?.category ?? 'Daily Prayer'}
+                  image={mediaUrl(show?.thumbnail)}
+                  onPress={() => router.push('/listen')}
                 />
                 <LatestRow
-                  href="/read"
                   glyph="☰"
                   glyphColor="blue"
                   label="Read"
@@ -139,6 +277,10 @@ export default function HomeScreen() {
                     article?.categories?.[0]?.name ?? 'Catholic formation',
                     formatShortDate(article?.published_at),
                   )}
+                  image={mediaUrl(article?.image)}
+                  onPress={() =>
+                    article?.url ? Linking.openURL(article.url) : router.push('/read')
+                  }
                 />
               </View>
             </View>
@@ -146,6 +288,7 @@ export default function HomeScreen() {
         )}
       </SafeAreaView>
     </ScrollView>
+    </ScreenBackground>
   );
 }
 
@@ -174,7 +317,57 @@ function LiveBanner({ title }: { title: string }) {
   );
 }
 
-function ContinueCard({ video }: { video?: (VideoDTO & { channel: string }) | undefined }) {
+function FounderCard({
+  avatar,
+  quote,
+}: {
+  avatar: string | null;
+  quote: { text: string; source: string };
+}) {
+  const theme = useTheme();
+  return (
+    <View
+      style={[
+        styles.founderCard,
+        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+      ]}>
+      <View style={styles.founderHead}>
+        <View style={[styles.founderAvatar, { borderColor: theme.gold, backgroundColor: theme.backgroundSelected }]}>
+          {avatar ? (
+            <Image source={{ uri: avatar }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+          ) : (
+            <ThemedText themeColor="gold" style={styles.founderAvatarGlyph}>
+              ✝
+            </ThemedText>
+          )}
+        </View>
+        <View style={styles.founderHeadText}>
+          <ThemedText style={styles.founderName}>Fr. Morson Livingston</ThemedText>
+          <ThemedText themeColor="gold" style={styles.founderRole}>
+            FOUNDER · ALL CATHOLIC MEDIA
+          </ThemedText>
+        </View>
+      </View>
+
+      <View style={[styles.founderQuote, { borderLeftColor: theme.gold }]}>
+        <ThemedText style={styles.founderQuoteText}>“{quote.text}”</ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.founderQuoteSource}>
+          — {quote.source.toUpperCase()}
+        </ThemedText>
+      </View>
+    </View>
+  );
+}
+
+function ContinueCard({
+  video,
+  label = 'CONTINUE WATCHING',
+  onPress,
+}: {
+  video?: HeroVideo | undefined;
+  label?: string;
+  onPress?: () => void;
+}) {
   const theme = useTheme();
   const router = useRouter();
   const title = video?.title ?? 'A reflection for the week ahead';
@@ -183,7 +376,7 @@ function ContinueCard({ video }: { video?: (VideoDTO & { channel: string }) | un
 
   return (
     <Pressable
-      onPress={() => router.push('/live')}
+      onPress={onPress ?? (() => router.push('/live'))}
       style={({ pressed }) => [
         styles.continueCard,
         { borderColor: theme.border, backgroundColor: theme.backgroundElement },
@@ -208,7 +401,7 @@ function ContinueCard({ video }: { video?: (VideoDTO & { channel: string }) | un
       </View>
       <View style={styles.continueBody}>
         <ThemedText themeColor="blue" style={styles.typeLabel}>
-          CONTINUE WATCHING
+          {label}
         </ThemedText>
         <ThemedText style={styles.continueTitle} numberOfLines={2}>
           {title}
@@ -221,58 +414,84 @@ function ContinueCard({ video }: { video?: (VideoDTO & { channel: string }) | un
   );
 }
 
-function MiniCard({
-  href,
-  symbol,
+function PreviewCard({
+  label,
   title,
-  subtitle,
+  image,
+  fallbackSymbol,
+  isVideo = false,
+  onPress,
 }: {
-  href: Href;
-  symbol: string;
+  label: string;
   title: string;
-  subtitle: string;
+  image?: string | null;
+  fallbackSymbol: string;
+  isVideo?: boolean;
+  onPress: () => void;
 }) {
   const theme = useTheme();
-  const router = useRouter();
   return (
     <Pressable
-      onPress={() => router.push(href)}
+      onPress={onPress}
       style={({ pressed }) => [
-        styles.miniCard,
-        { backgroundColor: theme.backgroundSelected, borderColor: theme.border },
+        styles.previewCard,
+        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
         pressed && styles.pressed,
       ]}>
-      <ThemedText themeColor="gold" style={styles.miniSymbol}>
-        {symbol}
-      </ThemedText>
-      <ThemedText style={styles.miniTitle}>{title}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.metaText} numberOfLines={2}>
-        {subtitle}
-      </ThemedText>
+      <View style={[styles.previewThumb, { backgroundColor: theme.backgroundSelected }]}>
+        {image ? (
+          <Image
+            source={{ uri: image }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={200}
+          />
+        ) : (
+          <ThemedText themeColor="gold" style={styles.previewGlyph}>
+            {fallbackSymbol}
+          </ThemedText>
+        )}
+        {isVideo ? (
+          <View style={styles.previewPlay}>
+            <ThemedText style={styles.previewPlayGlyph}>▶</ThemedText>
+          </View>
+        ) : null}
+      </View>
+      <View style={styles.previewBody}>
+        <ThemedText themeColor="blue" style={styles.typeLabel}>
+          {label}
+        </ThemedText>
+        <ThemedText style={styles.previewTitle} numberOfLines={2}>
+          {title}
+        </ThemedText>
+      </View>
     </Pressable>
   );
 }
 
 function LatestRow({
-  href,
   glyph,
   glyphColor,
   label,
   title,
   meta,
+  image,
+  isVideo = false,
+  onPress,
 }: {
-  href: Href;
   glyph: string;
   glyphColor: 'gold' | 'blue';
   label: string;
   title: string;
   meta: string;
+  image?: string | null;
+  isVideo?: boolean;
+  onPress: () => void;
 }) {
   const theme = useTheme();
-  const router = useRouter();
   return (
     <Pressable
-      onPress={() => router.push(href)}
+      onPress={onPress}
       style={({ pressed }) => [
         styles.latestRow,
         { borderColor: theme.border, backgroundColor: theme.backgroundElement },
@@ -280,24 +499,41 @@ function LatestRow({
       ]}>
       <View
         style={[
-          styles.iconTile,
+          styles.latestThumb,
           { backgroundColor: theme.backgroundSelected, borderColor: theme.border },
         ]}>
-        <ThemedText themeColor={glyphColor} style={styles.tileGlyph}>
-          {glyph}
-        </ThemedText>
+        {image ? (
+          <Image
+            source={{ uri: image }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={200}
+          />
+        ) : (
+          <ThemedText themeColor={glyphColor} style={styles.latestThumbGlyph}>
+            {glyph}
+          </ThemedText>
+        )}
+        {isVideo ? (
+          <View style={styles.latestPlay}>
+            <ThemedText style={styles.latestPlayGlyph}>▶</ThemedText>
+          </View>
+        ) : null}
       </View>
       <View style={styles.latestCopy}>
         <ThemedText themeColor="blue" style={styles.typeLabel}>
           {label.toUpperCase()}
         </ThemedText>
-        <ThemedText style={styles.latestTitle} numberOfLines={1}>
+        <ThemedText style={styles.latestTitle} numberOfLines={2}>
           {title}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" style={styles.metaText} numberOfLines={1}>
           {meta}
         </ThemedText>
       </View>
+      <ThemedText themeColor="textSecondary" style={styles.latestChevron}>
+        ›
+      </ThemedText>
     </Pressable>
   );
 }
@@ -314,6 +550,7 @@ const CARD_SHADOW = {
 
 const styles = StyleSheet.create({
   scroll: { flexGrow: 1 },
+  transparent: { flex: 1, backgroundColor: 'transparent' },
   safe: { paddingBottom: BottomTabInset + Spacing.four },
   content: { paddingHorizontal: Spacing.three, paddingTop: Spacing.three, gap: Spacing.three },
 
@@ -335,6 +572,43 @@ const styles = StyleSheet.create({
 
   greeting: { fontFamily: Fonts.serif, fontWeight: '700', fontSize: 26, lineHeight: 32, color: '#f3f6fa' },
   intro: { marginTop: Spacing.half },
+
+  founderCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: Spacing.three,
+    gap: Spacing.three,
+    ...CARD_SHADOW,
+  },
+  founderHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  founderAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  founderAvatarGlyph: { fontSize: 22 },
+  founderHeadText: { flex: 1, minWidth: 0, gap: 2 },
+  founderName: {
+    fontFamily: Fonts.serif,
+    fontWeight: '700',
+    fontSize: 16,
+    lineHeight: 20,
+    color: '#f3f6fa',
+  },
+  founderRole: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.8 },
+  founderQuote: { borderLeftWidth: 2, paddingLeft: Spacing.three, gap: Spacing.one },
+  founderQuoteText: {
+    fontFamily: Fonts.serif,
+    fontStyle: 'italic',
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#e7ecf3',
+  },
+  founderQuoteSource: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.8 },
 
   continueCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden', ...CARD_SHADOW },
   thumb: { height: 140, alignItems: 'center', justifyContent: 'center' },
@@ -362,17 +636,33 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 12, lineHeight: 16 },
 
   dualCards: { flexDirection: 'row', gap: Spacing.two + 2 },
-  miniCard: {
+  previewCard: {
     flex: 1,
-    minHeight: 96,
     borderRadius: 14,
     borderWidth: 1,
-    padding: Spacing.three,
-    gap: Spacing.two,
+    overflow: 'hidden',
     ...CARD_SHADOW,
   },
-  miniSymbol: { fontSize: 18, lineHeight: 22 },
-  miniTitle: { fontFamily: Fonts.serif, fontWeight: '700', fontSize: 15, color: '#f3f6fa' },
+  previewThumb: { height: 92, alignItems: 'center', justifyContent: 'center' },
+  previewGlyph: { fontSize: 26, lineHeight: 30 },
+  previewPlay: {
+    position: 'absolute',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(201,162,39,0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewPlayGlyph: { color: '#0d1f3c', fontSize: 13, marginLeft: 2 },
+  previewBody: { paddingHorizontal: Spacing.two + 2, paddingVertical: Spacing.two, gap: 2 },
+  previewTitle: {
+    fontFamily: Fonts.serif,
+    fontWeight: '700',
+    fontSize: 13.5,
+    lineHeight: 18,
+    color: '#f3f6fa',
+  },
 
   latestHeading: {
     fontFamily: Fonts.serif,
@@ -392,17 +682,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     ...CARD_SHADOW,
   },
-  iconTile: {
-    width: 44,
-    height: 44,
-    borderRadius: 10,
+  latestThumb: {
+    width: 76,
+    height: 56,
+    borderRadius: 9,
     borderWidth: 1,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tileGlyph: { fontSize: 16, lineHeight: 20 },
+  latestThumbGlyph: { fontSize: 18, lineHeight: 22 },
+  latestPlay: {
+    position: 'absolute',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(201,162,39,0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  latestPlayGlyph: { color: '#0d1f3c', fontSize: 10, marginLeft: 2 },
   latestCopy: { flex: 1, minWidth: 0, gap: 1 },
-  latestTitle: { fontSize: 14, fontWeight: '600', color: '#f3f6fa' },
+  latestTitle: { fontSize: 14, fontWeight: '600', lineHeight: 18, color: '#f3f6fa' },
+  latestChevron: { fontSize: 20, lineHeight: 22 },
 
   pressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
 });

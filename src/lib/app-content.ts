@@ -1,4 +1,17 @@
-import { apiRequest } from '@/lib/api-client';
+import { API_BASE_URL, API_V1_BASE_URL, apiRequest } from '@/lib/api-client';
+
+// The legacy API returns some image fields as bare storage paths ("marry.png")
+// while v1 returns absolute URLs. Normalise both to something <Image> can load.
+export function mediaUrl(path: string | null | undefined): string | null {
+  const value = (path ?? '').trim();
+  if (!value) return null;
+  if (/^(https?:)?\/\//i.test(value)) return value;
+  try {
+    return `${new URL(API_BASE_URL).origin}/storage/${value.replace(/^\/+/, '')}`;
+  } catch {
+    return null;
+  }
+}
 
 // Types mirror app/Http/Controllers/Api/AppContentController.php response shapes 1:1.
 
@@ -12,6 +25,43 @@ export type HomeSection = {
 export type HomeResponse = {
   data: {
     sections: HomeSection[];
+  };
+};
+
+// GET /api/v1/app/home/spotlights — the three dynamic cards on the website home
+// page, resolved server-side the same way the theme shortcodes do. Any card can
+// be null. Mirrors AppContentController::homeSpotlights() in ../main.
+// Rosary = the latest upload from the "Daily Rosary Meditations" YouTube channel
+// (the same source the website's [latest-daily-rosary] shortcode pulls from).
+export type RosarySpotlight = {
+  title: string;
+  video_url: string | null;
+  embed_url: string | null;
+  thumbnail: string | null;
+  published_at: string | null;
+  channel: string;
+};
+
+export type SaintSpotlight = {
+  id: number;
+  title: string;
+  slug: string | null;
+  description: string | null;
+  image: string | null;
+  url: string;
+  published_at: string | null;
+  is_today: boolean;
+};
+
+export type VaticanNewsSpotlight = VideoDTO & {
+  channel: { name: string; slug: string; thumbnail: string | null };
+};
+
+export type HomeSpotlightsResponse = {
+  data: {
+    rosary: RosarySpotlight | null;
+    saint: SaintSpotlight | null;
+    vatican_news: VaticanNewsSpotlight | null;
   };
 };
 
@@ -143,6 +193,19 @@ export type SaintsResponse = {
   };
 };
 
+// GET /api/v1/app/search?q= — grouped matches across every content type.
+export type SearchResponse = {
+  data: {
+    query: string;
+    articles: ArticleDTO[];
+    saints: ArticleDTO[];
+    shows: PodcastShowDTO[];
+    channels: ChannelDTO[];
+    videos: VideoDTO[];
+    episodes: PodcastEpisodeDTO[];
+  };
+};
+
 export type DonateConfigResponse = {
   data: {
     currency: string;
@@ -174,8 +237,61 @@ export type PrayerRequestResponse = {
   };
 };
 
+// "Daily Rosary Meditations" YouTube channel — the source the website's
+// [latest-daily-rosary] shortcode imports from. Fetched straight from YouTube's
+// public feed so the Daily Rosary card works even before the backend
+// /home/spotlights endpoint is deployed. (Web dev builds may be blocked by CORS;
+// native is fine, and the caller falls back to the CMS category feed.)
+const DAILY_ROSARY_FEED_URL =
+  'https://www.youtube.com/feeds/videos.xml?channel_id=UCSBn2yNBQKzduwG_OJ72wcQ';
+
+function decodeXmlEntities(value: string): string {
+  return value
+    .replace(/&#0*39;/g, "'")
+    .replace(/&#x0*27;/gi, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+export async function fetchLatestRosaryVideo(): Promise<RosarySpotlight | null> {
+  const response = await fetch(DAILY_ROSARY_FEED_URL, {
+    headers: { Accept: 'application/atom+xml, text/xml' },
+  });
+  if (!response.ok) return null;
+
+  const xml = await response.text();
+  const start = xml.indexOf('<entry>');
+  if (start === -1) return null;
+  const entry = xml.slice(start, xml.indexOf('</entry>', start));
+
+  const videoId = /<yt:videoId>([\w-]{11})<\/yt:videoId>/.exec(entry)?.[1];
+  if (!videoId) return null;
+
+  const title = decodeXmlEntities(/<title>([\s\S]*?)<\/title>/.exec(entry)?.[1] ?? '').trim();
+  const channel = decodeXmlEntities(
+    /<name>([\s\S]*?)<\/name>/.exec(entry)?.[1] ?? 'Daily Rosary Meditations',
+  ).trim();
+
+  return {
+    title: title || 'Daily Rosary',
+    video_url: `https://www.youtube.com/watch?v=${videoId}`,
+    embed_url: `https://www.youtube.com/embed/${videoId}`,
+    thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+    published_at: /<published>([^<]+)<\/published>/.exec(entry)?.[1] ?? null,
+    channel,
+  };
+}
+
 export const appContentApi = {
   home: () => apiRequest<HomeResponse>('/home'),
+
+  homeSpotlights: () =>
+    apiRequest<HomeSpotlightsResponse>('/home/spotlights', { baseUrl: API_V1_BASE_URL }),
+
+  latestRosaryVideo: fetchLatestRosaryVideo,
 
   channels: () => apiRequest<{ data: ChannelDTO[] }>('/channels'),
 
@@ -193,6 +309,9 @@ export const appContentApi = {
 
   saints: (params?: { q?: string; letter?: string; page?: number }) =>
     apiRequest<SaintsResponse>('/saints', { query: params }),
+
+  search: (q: string) =>
+    apiRequest<SearchResponse>('/search', { query: { q }, baseUrl: API_V1_BASE_URL }),
 
   donateConfig: () => apiRequest<DonateConfigResponse>('/donate/config'),
 

@@ -13,6 +13,10 @@ const DEV_HOST = Platform.select({ android: '10.0.2.2', default: 'localhost' });
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? `http://${DEV_HOST}/main/public/api/app`;
 
+// The versioned API (`/api/v1/app/*`) lives alongside the frozen legacy one the
+// app was scaffolded against. A handful of endpoints only exist on v1.
+export const API_V1_BASE_URL = API_BASE_URL.replace(/\/api\/app\/?$/, '/api/v1/app');
+
 export class ApiError extends Error {
   status: number;
   body: unknown;
@@ -30,10 +34,11 @@ type RequestOptions = {
   query?: Record<string, string | number | boolean | undefined>;
   body?: unknown;
   token?: string | null;
+  baseUrl?: string;
 };
 
-function buildUrl(path: string, query?: RequestOptions['query']): string {
-  const url = new URL(`${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`);
+function buildUrl(path: string, query?: RequestOptions['query'], baseUrl: string = API_BASE_URL): string {
+  const url = new URL(`${baseUrl}${path.startsWith('/') ? path : `/${path}`}`);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value !== undefined && value !== '') {
@@ -45,9 +50,9 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', query, body, token } = options;
+  const { method = 'GET', query, body, token, baseUrl } = options;
 
-  const response = await fetch(buildUrl(path, query), {
+  const response = await fetch(buildUrl(path, query, baseUrl), {
     method,
     headers: {
       Accept: 'application/json',

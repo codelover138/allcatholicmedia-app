@@ -4,15 +4,13 @@ import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/query-state';
+import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { appContentApi, type ArticleDTO } from '@/lib/app-content';
 
 export default function ReadScreen() {
-  const theme = useTheme();
-
   const readQuery = useQuery({
     queryKey: ['app', 'read'],
     queryFn: () => appContentApi.read(),
@@ -21,7 +19,8 @@ export default function ReadScreen() {
   const articles = readQuery.data?.data.articles ?? [];
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: theme.background }]}>
+    <ScreenBackground>
+      <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: 'transparent' }]}>
       <ThemedText type="title" style={styles.title}>
         Read
       </ThemedText>
@@ -49,6 +48,7 @@ export default function ReadScreen() {
         />
       ) : null}
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 

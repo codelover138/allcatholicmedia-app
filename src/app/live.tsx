@@ -4,10 +4,10 @@ import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/query-state';
+import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { appContentApi, type ChannelDTO, type LiveStreamDTO } from '@/lib/app-content';
 
 type Row =
@@ -17,8 +17,6 @@ type Row =
   | { kind: 'empty'; message: string };
 
 export default function LiveScreen() {
-  const theme = useTheme();
-
   const liveNowQuery = useQuery({
     queryKey: ['app', 'live-now'],
     queryFn: appContentApi.liveNow,
@@ -56,7 +54,8 @@ export default function LiveScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: theme.background }]}>
+    <ScreenBackground>
+      <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: 'transparent' }]}>
       <ThemedText type="title" style={styles.title}>
         Live
       </ThemedText>
@@ -105,6 +104,7 @@ export default function LiveScreen() {
         />
       ) : null}
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 

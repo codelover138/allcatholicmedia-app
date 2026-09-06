@@ -3,10 +3,10 @@ import { FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/query-state';
+import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { appContentApi, type ArticleDTO } from '@/lib/app-content';
 
 const COMING_SOON = [
@@ -17,8 +17,6 @@ const COMING_SOON = [
 ];
 
 export default function MoreScreen() {
-  const theme = useTheme();
-
   const saintsQuery = useQuery({
     queryKey: ['app', 'saints'],
     queryFn: () => appContentApi.saints(),
@@ -27,7 +25,8 @@ export default function MoreScreen() {
   const saints = saintsQuery.data?.data.saints ?? [];
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: theme.background }]}>
+    <ScreenBackground>
+      <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: 'transparent' }]}>
       <ThemedText type="title" style={styles.title}>
         More
       </ThemedText>
@@ -66,6 +65,7 @@ export default function MoreScreen() {
         ))}
       </ThemedView>
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 

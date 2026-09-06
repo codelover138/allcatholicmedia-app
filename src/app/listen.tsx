@@ -4,22 +4,21 @@ import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/query-state';
+import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
 import { appContentApi, type PodcastShowDTO } from '@/lib/app-content';
 
 export default function ListenScreen() {
-  const theme = useTheme();
-
   const listenQuery = useQuery({
     queryKey: ['app', 'listen'],
     queryFn: () => appContentApi.listen(),
   });
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: theme.background }]}>
+    <ScreenBackground>
+      <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: 'transparent' }]}>
       <ThemedText type="title" style={styles.title}>
         Listen
       </ThemedText>
@@ -51,6 +50,7 @@ export default function ListenScreen() {
         />
       ) : null}
     </SafeAreaView>
+    </ScreenBackground>
   );
 }
 
