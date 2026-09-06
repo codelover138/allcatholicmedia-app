@@ -206,6 +206,31 @@ export type SearchResponse = {
   };
 };
 
+// GET /api/v1/app/read/{slug} and /api/v1/app/saints/{slug} — one article/saint
+// with full HTML body. Mirrors PostDetailResource in ../main.
+export type PostDetailDTO = {
+  id: number;
+  title: string;
+  slug: string | null;
+  description: string | null;
+  content: string | null;
+  image: string | null;
+  image_full: string | null;
+  url: string;
+  views: number;
+  published_at: string | null;
+  updated_at: string | null;
+  categories?: { id: number; name: string }[];
+  tags?: { id: number; name: string }[];
+};
+
+/** Last path segment of an ACM blog URL (`…/blog/<slug>`). */
+export function slugFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const seg = url.split('?')[0].split('#')[0].replace(/\/+$/, '').split('/').pop();
+  return seg || null;
+}
+
 export type DonateConfigResponse = {
   data: {
     currency: string;
@@ -312,6 +337,16 @@ export const appContentApi = {
 
   search: (q: string) =>
     apiRequest<SearchResponse>('/search', { query: { q }, baseUrl: API_V1_BASE_URL }),
+
+  articleDetail: (slug: string) =>
+    apiRequest<{ data: PostDetailDTO }>(`/read/${encodeURIComponent(slug)}`, {
+      baseUrl: API_V1_BASE_URL,
+    }),
+
+  saintDetail: (slug: string) =>
+    apiRequest<{ data: PostDetailDTO }>(`/saints/${encodeURIComponent(slug)}`, {
+      baseUrl: API_V1_BASE_URL,
+    }),
 
   donateConfig: () => apiRequest<DonateConfigResponse>('/donate/config'),
 

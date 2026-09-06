@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
 import { EmptyState, ErrorState, LoadingState } from '@/components/query-state';
+import { openArticle } from '@/components/article-detail';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { useVideoPlayer } from '@/components/video-player';
@@ -197,8 +198,15 @@ export default function ExploreScreen() {
       return next;
     });
 
-  const open = (item: ExploreItem) =>
-    item.url ? play(item.url, item.title) : router.push(item.fallbackHref);
+  const open = (item: ExploreItem) => {
+    if (item.type === 'read' || item.type === 'saints') {
+      if (item.url) openArticle(item.type, item.url, item.title);
+      else router.push(item.fallbackHref);
+      return;
+    }
+    if (item.url) play(item.url, item.title);
+    else router.push(item.fallbackHref);
+  };
 
   return (
     <ScreenBackground>

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
@@ -10,6 +10,7 @@ import { ErrorState, LoadingState } from '@/components/query-state';
 import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { openArticle } from '@/components/article-detail';
 import { ScreenBackground } from '@/components/screen-background';
 import { useVideoPlayer } from '@/components/video-player';
 import { appContentApi, mediaUrl, type VideoDTO } from '@/lib/app-content';
@@ -210,11 +211,7 @@ export default function HomeScreen() {
             <ContinueCard
               video={heroVideo}
               label={vaticanVideo ? 'FROM VATICAN NEWS' : 'CONTINUE WATCHING'}
-              onPress={() =>
-                heroVideo?.video_url
-                  ? play(heroVideo.video_url, heroVideo.title)
-                  : router.push('/live')
-              }
+              onPress={() => play(heroVideo?.video_url, heroVideo?.title)}
             />
 
             <View style={styles.dualCards}>
@@ -224,18 +221,14 @@ export default function HomeScreen() {
                 image={rosaryImage}
                 fallbackSymbol="✝"
                 isVideo={!!rosaryVideoUrl}
-                onPress={() =>
-                  rosaryVideoUrl ? play(rosaryVideoUrl, rosaryLabel) : router.push('/pray')
-                }
+                onPress={() => play(rosaryVideoUrl, rosaryLabel)}
               />
               <PreviewCard
                 label="SAINT OF THE DAY"
                 title={saint?.title ?? 'A saint to discover'}
                 image={saintImage}
                 fallbackSymbol="✦"
-                onPress={() =>
-                  saint?.url ? Linking.openURL(saint.url) : router.push('/more')
-                }
+                onPress={() => openArticle('saints', saint?.url, saint?.title)}
               />
             </View>
 
@@ -253,11 +246,7 @@ export default function HomeScreen() {
                   )}
                   image={watchVideo?.thumbnail}
                   isVideo
-                  onPress={() =>
-                    watchVideo?.video_url
-                      ? play(watchVideo.video_url, watchVideo.title)
-                      : router.push('/live')
-                  }
+                  onPress={() => play(watchVideo?.video_url, watchVideo?.title)}
                 />
                 <LatestRow
                   glyph="♪"
@@ -278,9 +267,7 @@ export default function HomeScreen() {
                     formatShortDate(article?.published_at),
                   )}
                   image={mediaUrl(article?.image)}
-                  onPress={() =>
-                    article?.url ? Linking.openURL(article.url) : router.push('/read')
-                  }
+                  onPress={() => openArticle('read', article?.url, article?.title)}
                 />
               </View>
             </View>

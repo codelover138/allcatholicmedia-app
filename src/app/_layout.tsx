@@ -4,8 +4,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme, View } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { ArticleDetailHost } from '@/components/article-detail';
 import AppTabs from '@/components/app-tabs';
-import { VideoPlayerProvider } from '@/components/video-player';
+import { VideoPlayerHost } from '@/components/video-player';
 import { Colors } from '@/constants/theme';
 import { queryClient } from '@/lib/query-client';
 
@@ -20,12 +21,12 @@ export default function TabLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={navTheme}>
-        <VideoPlayerProvider>
-          <View style={{ flex: 1, backgroundColor: Colors.dark.background }}>
-            <AnimatedSplashOverlay />
-            <AppTabs />
-          </View>
-        </VideoPlayerProvider>
+        <View style={{ flex: 1, backgroundColor: Colors.dark.background }}>
+          <AnimatedSplashOverlay />
+          <AppTabs />
+          <VideoPlayerHost />
+          <ArticleDetailHost />
+        </View>
       </ThemeProvider>
     </QueryClientProvider>
   );
