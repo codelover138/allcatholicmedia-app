@@ -2,6 +2,10 @@
 
 Guidance for Claude Code (or any future contributor) working in this repository.
 
+> **New session? Read [`STATUS.md`](./STATUS.md) first** — current feature status, what's
+> pending/blocked, backend deploy checklist, and the architecture gotchas (routing shape,
+> `expo-notifications` import rule, API envelopes, native-module / dev-build requirements).
+
 ## What this project is
 
 **"Fr. Morson Livingston"** — an iOS/Android companion app for [allcatholicmedia.com](https://allcatholicmedia.com),
