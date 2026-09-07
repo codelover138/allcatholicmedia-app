@@ -125,6 +125,10 @@ Most content screens still have no per-item detail routes — that's next.
   (`expo start --ios`/`--android`) doesn't have this specific symptom.
 - Audio is built on **`expo-audio`** (SDK 57), not `react-native-track-player` — the latter is
   not installed.
+- **`expo-notifications` must never be imported statically** — its native code throws *on load*
+  in Expo Go (SDK 53+). Everything goes through `src/lib/notifications.ts`, which lazy-`require`s
+  it inside a try/catch and exposes `notificationsSupported` (false in Expo Go / on web). Push
+  registration + prayer reminders no-op there; they work in a dev/production build.
 
 ## What's NOT done yet
 

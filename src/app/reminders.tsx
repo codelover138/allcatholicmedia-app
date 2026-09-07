@@ -12,6 +12,7 @@ import {
   DEFAULT_PREFS,
   formatTime,
   loadReminderPrefs,
+  remindersSupported,
   type ReminderPrefs,
 } from '@/lib/reminders';
 
@@ -39,7 +40,11 @@ export default function RemindersScreen() {
     const applied = await applyReminderPrefs(next);
     setPrefs(applied);
     if ((next.rosary.enabled || next.mass.enabled) && !applied.rosary.enabled && !applied.mass.enabled) {
-      setNotice('Notifications are turned off for All Catholic Media. Enable them in your device settings to get reminders.');
+      setNotice(
+        remindersSupported
+          ? 'Notifications are turned off for All Catholic Media. Enable them in your device settings to get reminders.'
+          : 'Reminders need the full app (a development build) — they don’t run in Expo Go.',
+      );
     }
   };
 

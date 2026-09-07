@@ -1,8 +1,14 @@
-import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-import { ensureNotificationPermission } from '@/lib/push';
+import {
+  ensureNotificationHandler,
+  ensureNotificationPermission,
+  getNotifications,
+  notificationsSupported,
+} from '@/lib/notifications';
+
+export const remindersSupported = notificationsSupported;
 
 // Local (on-device) prayer reminders. No backend — these are scheduled straight
 // into the OS notification queue and survive app restarts, so we just re-apply
@@ -61,24 +67,26 @@ async function savePrefs(prefs: ReminderPrefs): Promise<void> {
 
 /** Cancel every reminder we previously scheduled (leaves other notifications alone). */
 async function clearOurs(): Promise<void> {
-  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const N = getNotifications();
+  if (!N) return;
+  const scheduled = await N.getAllScheduledNotificationsAsync();
   await Promise.all(
     scheduled
       .filter((n) => n.content.data?.tag === TAG)
-      .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)),
+      .map((n) => N.cancelScheduledNotificationAsync(n.identifier)),
   );
 }
 
 /**
  * Persist `prefs` and rebuild the OS schedule to match. Requests notification
  * permission if any reminder is being enabled. Returns the prefs actually
- * stored (reminders are forced off if permission is denied).
+ * stored (reminders are forced off if unavailable or permission is denied).
  */
 export async function applyReminderPrefs(prefs: ReminderPrefs): Promise<ReminderPrefs> {
-  if (Platform.OS === 'web') return prefs;
-
+  const N = getNotifications();
   const wantsAny = prefs.rosary.enabled || prefs.mass.enabled;
-  if (wantsAny && !(await ensureNotificationPermission())) {
+
+  if (!N || (wantsAny && !(await ensureNotificationPermission()))) {
     const off: ReminderPrefs = {
       rosary: { ...prefs.rosary, enabled: false },
       mass: { ...prefs.mass, enabled: false },
@@ -88,14 +96,15 @@ export async function applyReminderPrefs(prefs: ReminderPrefs): Promise<Reminder
     return off;
   }
 
+  ensureNotificationHandler();
   await savePrefs(prefs);
   await clearOurs();
 
   if (prefs.rosary.enabled) {
-    await Notifications.scheduleNotificationAsync({
+    await N.scheduleNotificationAsync({
       content: { ...COPY.rosary, data: { tag: TAG, kind: 'rosary' } },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        type: N.SchedulableTriggerInputTypes.DAILY,
         hour: prefs.rosary.hour,
         minute: prefs.rosary.minute,
       },
@@ -103,10 +112,10 @@ export async function applyReminderPrefs(prefs: ReminderPrefs): Promise<Reminder
   }
 
   if (prefs.mass.enabled) {
-    await Notifications.scheduleNotificationAsync({
+    await N.scheduleNotificationAsync({
       content: { ...COPY.mass, data: { tag: TAG, kind: 'mass' } },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+        type: N.SchedulableTriggerInputTypes.WEEKLY,
         weekday: prefs.mass.weekday,
         hour: prefs.mass.hour,
         minute: prefs.mass.minute,

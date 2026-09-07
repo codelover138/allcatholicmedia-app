@@ -1,20 +1,16 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { ApiError } from '@/lib/api-client';
 import { accountApi } from '@/lib/auth-api';
+import {
+  ensureNotificationHandler,
+  ensureNotificationPermission,
+  getNotifications,
+} from '@/lib/notifications';
 
-// Foreground notifications should still surface a banner + sound.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+export { ensureNotificationPermission };
 
 const projectId =
   Constants.expoConfig?.extra?.eas?.projectId ??
@@ -24,33 +20,25 @@ const projectId =
 // without re-hitting the notification APIs.
 let lastRegisteredToken: string | null = null;
 
-/** Ask for notification permission (idempotent). Returns true when granted. */
-export async function ensureNotificationPermission(): Promise<boolean> {
-  if (Platform.OS === 'web') return false;
-  const existing = await Notifications.getPermissionsAsync();
-  if (existing.status === 'granted') return true;
-  const req = await Notifications.requestPermissionsAsync();
-  return req.status === 'granted';
-}
-
 async function getExpoPushToken(): Promise<string | null> {
-  if (!Device.isDevice) return null; // simulators can't receive push
+  const N = getNotifications();
+  if (!N || !Device.isDevice) return null; // Expo Go / web / simulator
 
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'General',
-      importance: Notifications.AndroidImportance.DEFAULT,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#C9A227',
-    });
-  }
-
-  if (!(await ensureNotificationPermission())) return null;
+  ensureNotificationHandler();
 
   try {
-    const { data } = await Notifications.getExpoPushTokenAsync(
-      projectId ? { projectId } : undefined,
-    );
+    if (Platform.OS === 'android') {
+      await N.setNotificationChannelAsync('default', {
+        name: 'General',
+        importance: N.AndroidImportance.DEFAULT,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#C9A227',
+      });
+    }
+
+    if (!(await ensureNotificationPermission())) return null;
+
+    const { data } = await N.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
     return data;
   } catch {
     return null;
