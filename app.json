@@ -8,7 +8,8 @@
     "scheme": "mainapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.allcatholicmedia.mainapp"
     },
     "android": {
       "package": "com.allcatholicmedia.mainapp",
@@ -43,7 +44,25 @@
       "expo-secure-store",
       "expo-audio",
       "expo-video",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use Face ID to unlock All Catholic Media."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "All Catholic Media uses your photos so you can set a profile picture."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#C9A227"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

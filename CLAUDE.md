@@ -80,10 +80,22 @@ missing) is `IMPLEMENTATION.md` in this directory — read that before picking u
 | `listen.tsx` | Listen | `GET /listen` (podcast shows) |
 | `read.tsx` | Read | `GET /read` (articles) |
 | `more.tsx` | More | `GET /saints` + static "coming soon" rows (Prayer Request, Donate, Account, Settings — blocked on backend Phase 0, see `IMPLEMENTATION.md`) |
+| `profile.tsx` | Profile | `GET /api/v1/account/*` — guest invitation vs. signed-in dashboard |
+| `sign-in` / `register` / `forgot-password` / `verify-email` | — | `POST /api/v1/auth/*` (Sanctum bearer tokens) |
+| `account-edit` / `account-security` / `saved` / `giving` / `my-prayers` | — | `GET/PUT/DELETE /api/v1/account/*` |
+| `pray.tsx` | Pray | hub → prayer request, Angelus, reminders |
+| `prayer-request` | — | `POST /api/v1/app/prayer-requests` (public) |
+| `donate` | — | `GET /donate/config` + hosted PayPal checkout (`expo-web-browser`) |
+| `reminders` | — | local notifications only (`expo-notifications`), prefs in secure store |
 
-All API paths above are relative to `API_BASE_URL` in `api-client.ts`
-(`http://localhost/main/public/api/app` in dev). None of these screens have per-item detail
-routes yet (tapping an article/channel/show doesn't navigate anywhere) — that's next.
+> **Native tab bar** is Home · Explore · Pray · Community · Profile (`src/components/app-tabs.tsx`
+> and `app-tabs.web.tsx`); the older Live/Listen/Read/More routes still exist as pushable
+> screens. The table above lists route files, not just tabs.
+
+Content API paths are relative to `API_BASE_URL` in `api-client.ts`
+(`http://localhost/main/public/api/app` in dev). Auth + member-account calls go to
+`API_V1_ROOT_URL` (`…/api/v1`); the ambient bearer token is injected by `src/lib/auth-store.ts`.
+Most content screens still have no per-item detail routes — that's next.
 
 ## Conventions
 
@@ -112,7 +124,22 @@ routes yet (tapping an article/channel/show doesn't navigate anywhere) — that'
 
 ## What's NOT done yet
 
-See `IMPLEMENTATION.md` for the full phase-by-phase status. Short version: no auth, no donation
-flow, no push notifications, no offline downloads, no per-item detail screens, no native audio/
-video player yet — all core *list* screens are live against real data; everything interactive
-or personalized is still ahead.
+See `IMPLEMENTATION.md` for the full phase-by-phase status. Short version: **Phase 3 (auth &
+account) and Phase 6 (prayer request, donate, push) are done.** That covers sign-in / register /
+forgot-password / verify-email, profile dashboard, edit profile (+ avatar upload), account &
+security (change password, sessions, biometric app-lock, delete), saved / giving / my-prayers,
+the prayer-request form with 3-way visibility (`prayer-request.tsx` + rebuilt `pray.tsx` hub),
+donation checkout (`donate.tsx` — native PayPal flow for members via the new
+`POST /api/v1/app/donate/checkout` + `PayPalCheckout` service in `../allcatholicmedia`, hosted
+page fallback for guests), push-token registration, and local Rosary/Mass reminders
+(`reminders.tsx`).
+Backend deploy still pending: run `php artisan migrate` in `../allcatholicmedia`
+(`add_visibility_to_prayer_requests`, `add_guest_token_to_donations`) and PayPal-sandbox-test
+the checkout endpoint — see `IMPLEMENTATION.md` → Phase 0.
+Still ahead: Phase 4 (Listen audio player, offline downloads), Phase 5 (Live Mass WebView
+player), most content per-item detail screens, and Phase 7–8 polish / store submission.
+
+> New native modules were added (`expo-local-authentication`, `expo-image-picker`;
+> `expo-notifications` was already present) with config plugins in `app.json` — a **dev-client
+> rebuild** (`npx expo run:ios` / `run:android`) is required before biometrics / image picker /
+> push work on device; they no-op gracefully on web and in Expo Go.

@@ -18,9 +18,12 @@ export const Colors = {
     accent: '#f3f6fa',
     accentSoft: '#d8e2f1',
     gold: '#c9a227',
+    goldPressed: '#a88520',
     goldSoft: '#2e2a1b',
     blue: '#4c8dff',
     live: '#ff7d7d',
+    danger: '#ff6b6b',
+    success: '#5dd1a0',
   },
   dark: {
     text: '#f3f6fa',
@@ -32,9 +35,12 @@ export const Colors = {
     accent: '#f3f6fa',
     accentSoft: '#d8e2f1',
     gold: '#c9a227',
+    goldPressed: '#a88520',
     goldSoft: '#2e2a1b',
     blue: '#4c8dff',
     live: '#ff7d7d',
+    danger: '#ff6b6b',
+    success: '#5dd1a0',
   },
 } as const;
 

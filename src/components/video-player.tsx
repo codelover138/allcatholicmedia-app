@@ -48,8 +48,51 @@ export function useVideoPlayer() {
   return { play: playVideo };
 }
 
-const embedUri = (id: string) =>
-  `https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1&rel=0&modestbranding=1&fs=1`;
+const YT_ORIGIN = 'https://www.youtube.com';
+
+const embedUri = (id: string, origin?: string) =>
+  `${YT_ORIGIN}/embed/${id}?autoplay=1&playsinline=1&rel=0&modestbranding=1&fs=1` +
+  (origin ? `&origin=${encodeURIComponent(origin)}` : '');
+
+// Native player. Built on the YouTube IFrame Player API rather than a bare
+// <iframe src=".../embed/..."> because the API (a) creates the player with a
+// matching `origin`, so embed-restricted channels (Vatican News, Daily Rosary
+// Meditations) play inline instead of bouncing to the watch page, and (b) gives
+// us `onError`, so a video that truly can't be embedded reports back to RN
+// instead of silently navigating away. Served with `baseUrl` so the document
+// origin is really https://www.youtube.com.
+const playerHtml = (id: string) => `<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body,#player{width:100%;height:100%;background:#000;overflow:hidden}
+</style>
+</head>
+<body>
+<div id="player"></div>
+<script>
+  function post(msg){ try { window.ReactNativeWebView.postMessage(JSON.stringify(msg)); } catch (e) {} }
+  var tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  tag.onerror = function(){ post({ type: 'error', code: 'api' }); };
+  document.body.appendChild(tag);
+  function onYouTubeIframeAPIReady(){
+    new YT.Player('player', {
+      videoId: ${JSON.stringify(id)},
+      playerVars: { autoplay: 1, playsinline: 1, rel: 0, modestbranding: 1, fs: 1, origin: ${JSON.stringify(
+        YT_ORIGIN,
+      )} },
+      events: {
+        onReady: function(e){ try { e.target.playVideo(); } catch (err) {} },
+        onError: function(e){ post({ type: 'error', code: e && e.data }); }
+      }
+    });
+  }
+</script>
+</body>
+</html>`;
 
 /**
  * Renders the in-app player. Mount once at the app root (outside the tab
@@ -98,7 +141,7 @@ export function VideoPlayerHost() {
           ) : (
             <WebView
               style={styles.web}
-              source={{ uri: embedUri(video.id) }}
+              source={{ html: playerHtml(video.id), baseUrl: `${YT_ORIGIN}/` }}
               originWhitelist={['*']}
               allowsInlineMediaPlayback
               mediaPlaybackRequiresUserAction={false}
@@ -106,6 +149,31 @@ export function VideoPlayerHost() {
               javaScriptEnabled
               domStorageEnabled
               setSupportMultipleWindows={false}
+              // Keep every request the player makes inside the WebView. The only
+              // thing sent out to the system browser is an explicit tap on the
+              // player's own "Watch on YouTube" link (a top-frame navigation to
+              // a watch/shorts page) — normal playback never navigates.
+              onShouldStartLoadWithRequest={(req) => {
+                const leavingToWatchPage =
+                  req.isTopFrame &&
+                  /^https?:\/\/(www\.)?(youtube\.com\/(watch\?|shorts\/)|youtu\.be\/)/.test(req.url);
+                if (leavingToWatchPage) {
+                  Linking.openURL(req.url);
+                  return false;
+                }
+                return true;
+              }}
+              onMessage={(e) => {
+                try {
+                  const msg = JSON.parse(e.nativeEvent.data);
+                  // 101 / 150 = the uploader disabled embedding for this video;
+                  // it can only be watched on YouTube itself.
+                  if (msg?.type === 'error' && (msg.code === 101 || msg.code === 150)) {
+                    Linking.openURL(`https://youtu.be/${video.id}`);
+                    closeVideo();
+                  }
+                } catch {}
+              }}
             />
           )
         ) : null}

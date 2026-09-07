@@ -243,23 +243,42 @@ export type DonateConfigResponse = {
   };
 };
 
+export type PrayerVisibility = 'only_me' | 'prayer_team' | 'community';
+
 export type PrayerRequestInput = {
   full_name: string;
   email: string;
-  mobile_number?: string;
+  phone?: string;
   location?: string;
   intention: string;
+  /** Preferred over `is_private`; the backend maps it back to the boolean. */
+  visibility?: PrayerVisibility;
+  /** Legacy: true = prayer team only; false = public prayer wall. */
   is_private?: boolean;
   allow_follow_up?: boolean;
 };
 
 export type PrayerRequestResponse = {
-  message: string;
   data: {
     id: number;
     status: string;
+    visibility?: PrayerVisibility;
     submitted_at: string | null;
   };
+};
+
+export type DonationCheckoutInput = {
+  amount: number;
+  message?: string;
+  /** App deep link PayPal returns to (e.g. from `Linking.createURL`). */
+  return_url: string;
+  /** Required for guests (no bearer token). */
+  donor_name?: string;
+  donor_email?: string;
+};
+
+export type DonationCheckoutResponse = {
+  data: { donation_id: number; approval_url: string };
 };
 
 // "Daily Rosary Meditations" YouTube channel — the source the website's
@@ -351,5 +370,18 @@ export const appContentApi = {
   donateConfig: () => apiRequest<DonateConfigResponse>('/donate/config'),
 
   submitPrayerRequest: (input: PrayerRequestInput) =>
-    apiRequest<PrayerRequestResponse>('/prayer-requests', { method: 'POST', body: input }),
+    apiRequest<PrayerRequestResponse>('/prayer-requests', {
+      method: 'POST',
+      body: input,
+      baseUrl: API_V1_BASE_URL,
+    }),
+
+  // Native donation checkout. Falls back to `donate/config`'s hosted page in the
+  // UI when this endpoint isn't deployed yet (404) or PayPal is unavailable.
+  createDonationCheckout: (input: DonationCheckoutInput) =>
+    apiRequest<DonationCheckoutResponse>('/donate/checkout', {
+      method: 'POST',
+      body: input,
+      baseUrl: API_V1_BASE_URL,
+    }),
 };
