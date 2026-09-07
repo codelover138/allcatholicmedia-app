@@ -85,8 +85,12 @@ missing) is `IMPLEMENTATION.md` in this directory — read that before picking u
 | `account-edit` / `account-security` / `saved` / `giving` / `my-prayers` | — | `GET/PUT/DELETE /api/v1/account/*` |
 | `pray.tsx` | Pray | hub → prayer request, Angelus, reminders |
 | `prayer-request` | — | `POST /api/v1/app/prayer-requests` (public) |
-| `donate` | — | `GET /donate/config` + hosted PayPal checkout (`expo-web-browser`) |
+| `donate` | — | `GET /donate/config` + `POST /donate/checkout` (native) / hosted PayPal fallback |
 | `reminders` | — | local notifications only (`expo-notifications`), prefs in secure store |
+| `listen.tsx` | Listen | `GET /listen` → pressable → `show/[slug]` |
+| `show/[slug]` | — | `GET /api/v1/app/listen/{slug}` (paginated) → `audio-player` (`expo-audio`) |
+| `live.tsx` | Live | `GET /live-now` + `/channels`; streams → `VideoPlayerHost`, channels → `channel/[slug]` |
+| `channel/[slug]` | — | `GET /api/v1/app/channels/{slug}` (paginated) → `VideoPlayerHost` |
 
 > **Native tab bar** is Home · Explore · Pray · Community · Profile (`src/components/app-tabs.tsx`
 > and `app-tabs.web.tsx`); the older Live/Listen/Read/More routes still exist as pushable
@@ -124,20 +128,23 @@ Most content screens still have no per-item detail routes — that's next.
 
 ## What's NOT done yet
 
-See `IMPLEMENTATION.md` for the full phase-by-phase status. Short version: **Phase 3 (auth &
-account) and Phase 6 (prayer request, donate, push) are done.** That covers sign-in / register /
-forgot-password / verify-email, profile dashboard, edit profile (+ avatar upload), account &
-security (change password, sessions, biometric app-lock, delete), saved / giving / my-prayers,
-the prayer-request form with 3-way visibility (`prayer-request.tsx` + rebuilt `pray.tsx` hub),
-donation checkout (`donate.tsx` — native PayPal flow for members via the new
-`POST /api/v1/app/donate/checkout` + `PayPalCheckout` service in `../allcatholicmedia`, hosted
-page fallback for guests), push-token registration, and local Rosary/Mass reminders
-(`reminders.tsx`).
-Backend deploy still pending: run `php artisan migrate` in `../allcatholicmedia`
-(`add_visibility_to_prayer_requests`, `add_guest_token_to_donations`) and PayPal-sandbox-test
-the checkout endpoint — see `IMPLEMENTATION.md` → Phase 0.
-Still ahead: Phase 4 (Listen audio player, offline downloads), Phase 5 (Live Mass WebView
-player), most content per-item detail screens, and Phase 7–8 polish / store submission.
+See `IMPLEMENTATION.md` for the full phase-by-phase status. Short version: **Phases 3, 4, 5,
+and 6 are done** (auth & account; Listen audio player; Live Mass playback; prayer request /
+donate / push). That covers sign-in / register / forgot-password / verify-email, profile
+dashboard, edit profile (+ avatar upload), account & security (password, sessions, biometric
+app-lock, delete), saved / giving / my-prayers, the prayer-request form with 3-way visibility
+(`prayer-request.tsx` + `pray.tsx` hub), donation checkout (`donate.tsx` — native PayPal flow
+for members via `POST /api/v1/app/donate/checkout` + `PayPalCheckout` in `../allcatholicmedia`,
+hosted-page fallback for guests), push-token registration, local Rosary/Mass reminders
+(`reminders.tsx`), the **audio player** (`audio-player.tsx` — `expo-audio`, background +
+lock-screen, mini + full-screen, speed / skip / seek) with `show/[slug].tsx`, and the rebuilt
+`live.tsx` + `channel/[slug].tsx` (live streams reuse the WebView `VideoPlayerHost`).
+Backend deploy still pending: `php artisan migrate` in `../allcatholicmedia`
+(`add_visibility_to_prayer_requests`, `add_guest_token_to_donations`) + PayPal-sandbox-test the
+checkout endpoint — see `IMPLEMENTATION.md` → Phase 0.
+Still ahead: offline podcast downloads (Phase 4.3), picture-in-picture (5.3), a couple of
+remaining content detail screens (article/saint already exist; video detail does not), the
+Community tab, and Phase 7–8 polish / store submission.
 
 > New native modules were added (`expo-local-authentication`, `expo-image-picker`;
 > `expo-notifications` was already present) with config plugins in `app.json` — a **dev-client

@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.allcatholicmedia.mainapp"
+      "bundleIdentifier": "com.allcatholicmedia.mainapp",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"]
+      }
     },
     "android": {
       "package": "com.allcatholicmedia.mainapp",

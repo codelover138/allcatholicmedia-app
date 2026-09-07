@@ -6,6 +6,7 @@ import { useColorScheme, View } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ArticleDetailHost } from '@/components/article-detail';
+import { AudioPlayerHost } from '@/components/audio-player';
 import AppTabs from '@/components/app-tabs';
 import { LockGate } from '@/components/lock-gate';
 import { VideoPlayerHost } from '@/components/video-player';
@@ -33,6 +34,7 @@ export default function TabLayout() {
         <View style={{ flex: 1, backgroundColor: Colors.dark.background }}>
           <AnimatedSplashOverlay />
           <AppTabs />
+          <AudioPlayerHost />
           <VideoPlayerHost />
           <ArticleDetailHost />
           <LockGate />

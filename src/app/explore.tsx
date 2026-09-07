@@ -105,7 +105,7 @@ export default function ExploreScreen() {
           type: 'listen' as const,
           title: s.name,
           meta: joinMeta(s.category ?? 'Listen', s.episodes_count ? `${s.episodes_count} episodes` : undefined),
-          fallbackHref: '/listen' as const,
+          fallbackHref: `/show/${s.slug}` as Href,
           image: mediaUrl(s.thumbnail),
         })),
         ...d.episodes.map((e) => ({
@@ -158,7 +158,7 @@ export default function ExploreScreen() {
       type: 'listen' as const,
       title: s.name,
       meta: joinMeta(s.category ?? 'Listen', s.episodes_count ? `${s.episodes_count} episodes` : undefined),
-      fallbackHref: '/listen' as const,
+      fallbackHref: `/show/${s.slug}` as Href,
       image: mediaUrl(s.thumbnail),
     }));
 

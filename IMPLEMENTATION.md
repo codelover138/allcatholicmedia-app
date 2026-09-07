@@ -42,8 +42,8 @@ proposal's discovery section. See the backend audit table below for specifics.
 | Phase 2 | Core content screens (Home, Live+Channels, Listen, Read, Saints) | `[x] DONE` |
 | Phase 0 | Backend gap-fill (auth, push registration, donation JSON checkout) | `[x] Code complete — auth + push-device + search live; donation JSON checkout + prayer visibility added (need: run migrations + PayPal sandbox test)` |
 | Phase 3 | Auth & Account | `[x] DONE (client) — sign-in / register / forgot-password / verify-email / profile dashboard / edit profile (+ avatar upload) / account & security (change password, sessions, biometric app-lock, delete).` |
-| Phase 4 | Listen & audio player (background playback, offline downloads) | `[ ] NOT STARTED` |
-| Phase 5 | Live Mass playback (WebView player) | `[ ] NOT STARTED` |
+| Phase 4 | Listen & audio player (background playback, offline downloads) | `[~] Player + show detail done (expo-audio, background mode, lock-screen); offline downloads not started` |
+| Phase 5 | Live Mass playback (WebView player) | `[x] DONE — live streams open the WebView player; Live tab rebuilt with countdown + channel detail` |
 | Phase 6 | Prayer Request, Donate, Push | `[x] DONE — Prayer Request form, Donate (hosted checkout), push-token registration, local Rosary/Mass reminders` |
 | Phase 7 | Polish (accessibility, crash/analytics, store assets) | `[ ] NOT STARTED` |
 | Phase 8 | Beta & store submission | `[ ] NOT STARTED` |
@@ -176,28 +176,37 @@ make sure it's on in staging/production before app store submission too.
 
 ## PHASE 4 — Listen & audio player
 
-**Status: not started.** No backend blocker — `listen`/`listen/{slug}` already return
-`audio_url`/`embed_url`.
+**Status: player + navigation done; offline downloads still open.** Built on **`expo-audio`**
+(SDK 57), not `react-native-track-player` (which turned out not to be installed and whose New
+Arch status was unverified).
 
-- [ ] 4.1 Episode list → detail navigation (currently Listen only shows the show list, not
-      episodes or a player)
-- [ ] 4.2 Expanded player screen — background playback via `react-native-track-player`
-      (**compatibility with Expo SDK 57 New Architecture not yet verified — check this before
-      building further on it**)
-- [ ] 4.3 Offline download queue (`expo-file-system`)
-- [ ] 4.4 Playback speed control, lock-screen/CarPlay/Android Auto controls
+- [x] 4.1 Episode list → detail — `src/app/show/[slug].tsx` (paginated `useInfiniteQuery` on
+      the v1 `listen/{slug}`), reached from `listen.tsx` (rebuilt: pressable rows, category
+      filter chips) and Explore.
+- [x] 4.2 Player — `src/components/audio-player.tsx`: module store + `AudioPlayerHost` mounted
+      in `_layout` (a docked mini-player + a full-screen modal). `setAudioModeAsync({
+      shouldPlayInBackground: true, playsInSilentMode: true, interruptionMode: 'doNotMix' })`
+      + `player.setActiveForLockScreen(...)` for lock-screen controls; `app.json` gains
+      `ios.infoPlist.UIBackgroundModes: ["audio"]` (Android already had the media
+      foreground-service permissions).
+- [x] 4.4 Playback speed (1–2× cycle), skip ±15/30 s, tap-to-seek scrubber, lock-screen
+      metadata.
+- [ ] 4.3 Offline download queue (`expo-file-system`) — **not started.**
 
 ---
 
 ## PHASE 5 — Live Mass playback
 
-**Status: not started.**
+**Status: done (except PiP).**
 
-- [ ] 5.1 WebView-embedded player (`react-native-webview`) for the `embed_url` returned by
-      `live-now` — **not** a native HLS player, since the backend has no raw stream URL (see
-      backend audit above)
-- [ ] 5.2 "Next Mass" countdown fallback when nothing is live
-- [ ] 5.3 Picture-in-picture where platform-supported
+- [x] 5.1 WebView player — `live.tsx` (rebuilt) opens live streams in the existing
+      `VideoPlayerHost` (`playVideo(stream.embed_url)`; the YouTube IFrame API player already
+      handles `youtube.com/live/…` URLs). Channel rows now navigate to
+      `src/app/channel/[slug].tsx` (paginated video list → `playVideo`).
+- [x] 5.2 "Next Mass" countdown — upcoming streams show `Starts in 2 hr / 3 days` from
+      `scheduled_at`.
+- [ ] 5.3 Picture-in-picture — **not done** (needs native player work; the WebView player is
+      fullscreen-modal only).
 
 ---
 

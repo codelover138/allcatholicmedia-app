@@ -101,8 +101,8 @@ export type ChannelDetailResponse = {
   data: {
     channel: Omit<ChannelDTO, 'latest_video'>;
     videos: VideoDTO[];
-    meta: PaginationMeta;
   };
+  meta: { pagination: V1Pagination };
 };
 
 export type PodcastShowDTO = {
@@ -130,18 +130,27 @@ export type PodcastEpisodeDTO = {
   thumbnail: string | null;
   audio_url: string | null;
   embed_url: string | null;
-  duration: string | null;
+  /** ISO-8601 (`PT25M`) on the legacy API, seconds on v1. */
+  duration: string | number | null;
   episode_number: number | null;
   is_featured: boolean;
   published_at: string | null;
+};
+
+export type V1Pagination = {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  has_more: boolean;
 };
 
 export type ListenDetailResponse = {
   data: {
     show: PodcastShowDTO;
     episodes: PodcastEpisodeDTO[];
-    meta: PaginationMeta;
   };
+  meta: { pagination: V1Pagination };
 };
 
 export type LiveStreamDTO = {
@@ -339,12 +348,20 @@ export const appContentApi = {
 
   channels: () => apiRequest<{ data: ChannelDTO[] }>('/channels'),
 
-  channelDetail: (slug: string) => apiRequest<ChannelDetailResponse>(`/channels/${slug}`),
+  channelDetail: (slug: string, params?: { page?: number }) =>
+    apiRequest<ChannelDetailResponse>(`/channels/${slug}`, {
+      query: params,
+      baseUrl: API_V1_BASE_URL,
+    }),
 
   listen: (params?: { category?: string; sort?: 'name' | 'episodes' }) =>
     apiRequest<ListenResponse>('/listen', { query: params }),
 
-  listenDetail: (slug: string) => apiRequest<ListenDetailResponse>(`/listen/${slug}`),
+  listenDetail: (slug: string, params?: { page?: number }) =>
+    apiRequest<ListenDetailResponse>(`/listen/${slug}`, {
+      query: params,
+      baseUrl: API_V1_BASE_URL,
+    }),
 
   liveNow: () => apiRequest<LiveNowResponse>('/live-now'),
 
