@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { playAudio } from '@/components/audio-player';
@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { BottomTabInset, Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { appContentApi, mediaUrl, type PodcastEpisodeDTO } from '@/lib/app-content';
+import { downloadsSupported, localAudioFor, useDownloads } from '@/lib/downloads';
 import { formatDuration, formatShortDate } from '@/lib/format';
 
 export default function ShowDetailScreen() {
@@ -32,12 +33,13 @@ export default function ShowDetailScreen() {
   const showArt = mediaUrl(show?.thumbnail) ?? mediaUrl(show?.banner);
 
   const openEpisode = (e: PodcastEpisodeDTO) => {
-    if (!e.audio_url) return;
+    const src = localAudioFor(e.id) ?? e.audio_url;
+    if (!src) return;
     playAudio({
       id: e.id,
       title: e.title,
       showName: show?.name,
-      audioUrl: e.audio_url,
+      audioUrl: src,
       artwork: mediaUrl(e.thumbnail) ?? showArt,
       description: e.description,
     });
@@ -111,6 +113,7 @@ export default function ShowDetailScreen() {
               episode={item}
               onPress={() => openEpisode(item)}
               artwork={mediaUrl(item.thumbnail) ?? showArt}
+              showName={show?.name}
             />
           )}
         />
@@ -122,26 +125,56 @@ export default function ShowDetailScreen() {
 function EpisodeRow({
   episode,
   artwork,
+  showName,
   onPress,
 }: {
   episode: PodcastEpisodeDTO;
   artwork: string | null;
+  showName?: string;
   onPress: () => void;
 }) {
   const theme = useTheme();
-  const meta = [formatShortDate(episode.published_at), formatDuration(episode.duration)]
+  const key = String(episode.id);
+  const downloaded = useDownloads((s) => !!s.entries[key]);
+  const downloadState = useDownloads((s) => s.active[key]);
+  const startDownload = useDownloads((s) => s.download);
+  const removeDownload = useDownloads((s) => s.remove);
+
+  const meta = [
+    formatShortDate(episode.published_at),
+    formatDuration(episode.duration),
+    downloaded ? 'Downloaded' : null,
+  ]
     .filter(Boolean)
     .join(' · ');
+
+  const onDownloadPress = () => {
+    if (downloaded) {
+      Alert.alert('Remove download?', 'This frees up space on your device.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: () => removeDownload(episode.id) },
+      ]);
+      return;
+    }
+    if (!episode.audio_url) return;
+    startDownload({
+      episodeId: episode.id,
+      audioUrl: episode.audio_url,
+      title: episode.title,
+      showName,
+      artwork,
+    });
+  };
 
   return (
     <Pressable
       onPress={onPress}
-      disabled={!episode.audio_url}
+      disabled={!episode.audio_url && !downloaded}
       style={({ pressed }) => [
         styles.row,
         { backgroundColor: theme.backgroundElement, borderColor: theme.border },
         pressed && styles.pressed,
-        !episode.audio_url && styles.rowDisabled,
+        !episode.audio_url && !downloaded && styles.rowDisabled,
       ]}>
       <View style={[styles.rowArt, { backgroundColor: theme.backgroundSelected }]}>
         {artwork ? (
@@ -162,6 +195,27 @@ function EpisodeRow({
           </ThemedText>
         ) : null}
       </View>
+
+      {downloadsSupported && (episode.audio_url || downloaded) ? (
+        <Pressable
+          onPress={onDownloadPress}
+          hitSlop={10}
+          style={styles.dlBtn}
+          accessibilityRole="button"
+          accessibilityLabel={
+            downloaded ? 'Remove download' : downloadState === 'downloading' ? 'Downloading' : 'Download episode'
+          }>
+          {downloadState === 'downloading' ? (
+            <ActivityIndicator size="small" color={theme.textSecondary} />
+          ) : (
+            <ThemedText
+              themeColor={downloaded ? 'gold' : downloadState === 'error' ? 'danger' : 'textSecondary'}
+              style={styles.dlGlyph}>
+              {downloaded ? '✓' : downloadState === 'error' ? '↻' : '⤓'}
+            </ThemedText>
+          )}
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
@@ -231,5 +285,7 @@ const styles = StyleSheet.create({
   playGlyph: { color: '#0d1f3c', fontSize: 10, marginLeft: 2 },
   rowCopy: { flex: 1, minWidth: 0, gap: 2 },
   rowTitle: { fontSize: 14, fontWeight: '600', lineHeight: 18, color: '#f3f6fa' },
+  dlBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  dlGlyph: { fontSize: 17, fontWeight: '700' },
   pressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
 });

@@ -45,7 +45,14 @@ export default function ListenScreen() {
           }
           ListHeaderComponent={
             <View style={styles.head}>
-              <ThemedText style={styles.title}>Listen</ThemedText>
+              <View style={styles.titleRow}>
+                <ThemedText style={styles.title}>Listen</ThemedText>
+                <Pressable onPress={() => router.push('/downloads')} hitSlop={8}>
+                  <ThemedText type="small" themeColor="blue">
+                    Downloads ›
+                  </ThemedText>
+                </Pressable>
+              </View>
               <ThemedText type="small" themeColor="textSecondary">
                 Homilies, reflections, and the Rosary — for the commute, the walk, the quiet hour.
               </ThemedText>
@@ -139,6 +146,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   head: { gap: Spacing.two, paddingBottom: Spacing.three },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: {
     fontFamily: Fonts.serif,
     fontWeight: '700',

@@ -42,8 +42,8 @@ proposal's discovery section. See the backend audit table below for specifics.
 | Phase 2 | Core content screens (Home, Live+Channels, Listen, Read, Saints) | `[x] DONE` |
 | Phase 0 | Backend gap-fill (auth, push registration, donation JSON checkout) | `[x] Code complete — auth + push-device + search live; donation JSON checkout + prayer visibility added (need: run migrations + PayPal sandbox test)` |
 | Phase 3 | Auth & Account | `[x] DONE (client) — sign-in / register / forgot-password / verify-email / profile dashboard / edit profile (+ avatar upload) / account & security (change password, sessions, biometric app-lock, delete).` |
-| Phase 4 | Listen & audio player (background playback, offline downloads) | `[~] Player + show detail done (expo-audio, background mode, lock-screen); offline downloads not started` |
-| Phase 5 | Live Mass playback (WebView player) | `[x] DONE — live streams open the WebView player; Live tab rebuilt with countdown + channel detail` |
+| Phase 4 | Listen & audio player (background playback, offline downloads) | `[x] DONE — expo-audio player (background + lock-screen), show detail, offline downloads (expo-file-system)` |
+| Phase 5 | Live Mass playback (WebView player) | `[x] DONE — WebView player + countdown + channel detail; PiP enabled on the WebView` |
 | Phase 6 | Prayer Request, Donate, Push | `[x] DONE — Prayer Request form, Donate (hosted checkout), push-token registration, local Rosary/Mass reminders` |
 | Phase 7 | Polish (accessibility, crash/analytics, store assets) | `[ ] NOT STARTED` |
 | Phase 8 | Beta & store submission | `[ ] NOT STARTED` |
@@ -191,7 +191,13 @@ Arch status was unverified).
       foreground-service permissions).
 - [x] 4.4 Playback speed (1–2× cycle), skip ±15/30 s, tap-to-seek scrubber, lock-screen
       metadata.
-- [ ] 4.3 Offline download queue (`expo-file-system`) — **not started.**
+- [x] 4.3 Offline downloads — `src/lib/downloads.ts` (zustand + `expo-file-system` `File`/
+      `Directory`/`Paths`): files under `<documents>/acm-downloads/` with a `manifest.json`,
+      manifest re-verified against disk on launch (`hydrate` in `_layout`). Per-episode
+      download / remove control in `show/[slug].tsx`; `src/app/downloads.tsx` lists saved
+      episodes with total size + delete; the player prefers the local file when present
+      (`localAudioFor`). No-op on web. (Live progress bar not shown — just a downloading
+      spinner.)
 
 ---
 
@@ -205,8 +211,9 @@ Arch status was unverified).
       `src/app/channel/[slug].tsx` (paginated video list → `playVideo`).
 - [x] 5.2 "Next Mass" countdown — upcoming streams show `Starts in 2 hr / 3 days` from
       `scheduled_at`.
-- [ ] 5.3 Picture-in-picture — **not done** (needs native player work; the WebView player is
-      fullscreen-modal only).
+- [x] 5.3 Picture-in-picture — `allowsPictureInPictureMediaPlayback` on the WebView, so the
+      YouTube player's PiP button works on iOS. (A true native swipe-to-PiP would need a
+      native video component.)
 
 ---
 

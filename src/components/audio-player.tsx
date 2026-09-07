@@ -136,6 +136,8 @@ export function AudioPlayerHost() {
       {!isExpanded ? (
         <Pressable
           onPress={() => setExpanded(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Now playing: ${track.title}. Open player`}
           style={[styles.mini, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
           <View style={[styles.miniProgress, { backgroundColor: theme.border }]}>
             <View style={[styles.miniProgressFill, { width: `${progress * 100}%`, backgroundColor: theme.gold }]} />
@@ -158,10 +160,20 @@ export function AudioPlayerHost() {
                 {status.isBuffering ? 'Buffering…' : (track.showName ?? 'All Catholic Media')}
               </ThemedText>
             </View>
-            <Pressable onPress={toggle} hitSlop={10} style={styles.miniBtn}>
+            <Pressable
+              onPress={toggle}
+              hitSlop={10}
+              style={styles.miniBtn}
+              accessibilityRole="button"
+              accessibilityLabel={playing ? 'Pause' : 'Play'}>
               <ThemedText style={styles.miniBtnGlyph}>{playing ? '❚❚' : '▶'}</ThemedText>
             </Pressable>
-            <Pressable onPress={closeAudio} hitSlop={10} style={styles.miniBtn}>
+            <Pressable
+              onPress={closeAudio}
+              hitSlop={10}
+              style={styles.miniBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Stop and close player">
               <ThemedText themeColor="textSecondary" style={styles.miniClose}>
                 ✕
               </ThemedText>
@@ -175,10 +187,18 @@ export function AudioPlayerHost() {
         <View style={[styles.full, { backgroundColor: theme.background }]}>
           <SafeAreaView edges={['top', 'bottom']} style={styles.fullSafe}>
             <View style={styles.fullBar}>
-              <Pressable onPress={() => setExpanded(false)} hitSlop={12}>
+              <Pressable
+                onPress={() => setExpanded(false)}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Minimize player">
                 <ThemedText style={styles.chevron}>⌄</ThemedText>
               </Pressable>
-              <ThemedText type="smallBold" themeColor="textSecondary" style={styles.nowPlaying}>
+              <ThemedText
+                type="smallBold"
+                themeColor="textSecondary"
+                style={styles.nowPlaying}
+                accessibilityRole="header">
                 NOW PLAYING
               </ThemedText>
               <Pressable onPress={closeAudio} hitSlop={12}>

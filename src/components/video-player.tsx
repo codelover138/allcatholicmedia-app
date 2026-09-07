@@ -144,6 +144,7 @@ export function VideoPlayerHost() {
               source={{ html: playerHtml(video.id), baseUrl: `${YT_ORIGIN}/` }}
               originWhitelist={['*']}
               allowsInlineMediaPlayback
+              allowsPictureInPictureMediaPlayback
               mediaPlaybackRequiresUserAction={false}
               allowsFullscreenVideo
               javaScriptEnabled

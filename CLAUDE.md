@@ -87,6 +87,7 @@ missing) is `IMPLEMENTATION.md` in this directory — read that before picking u
 | `prayer-request` | — | `POST /api/v1/app/prayer-requests` (public) |
 | `donate` | — | `GET /donate/config` + `POST /donate/checkout` (native) / hosted PayPal fallback |
 | `reminders` | — | local notifications only (`expo-notifications`), prefs in secure store |
+| `downloads` | — | offline episodes (`expo-file-system`, `src/lib/downloads.ts`); no backend |
 | `listen.tsx` | Listen | `GET /listen` → pressable → `show/[slug]` |
 | `show/[slug]` | — | `GET /api/v1/app/listen/{slug}` (paginated) → `audio-player` (`expo-audio`) |
 | `live.tsx` | Live | `GET /live-now` + `/channels`; streams → `VideoPlayerHost`, channels → `channel/[slug]` |
@@ -122,29 +123,28 @@ Most content screens still have no per-item detail routes — that's next.
   in this "static output" Expo Router config — cold navigation between tabs can take 10–20s+ on
   this machine during `expo start --web`. Not a regression, just slow local iteration; native
   (`expo start --ios`/`--android`) doesn't have this specific symptom.
-- `react-native-track-player` (installed for background/lock-screen audio) has not yet been
-  verified against Expo SDK 57's New Architecture default — first person to wire up the Listen
-  player should confirm compatibility before building on top of it.
+- Audio is built on **`expo-audio`** (SDK 57), not `react-native-track-player` — the latter is
+  not installed.
 
 ## What's NOT done yet
 
-See `IMPLEMENTATION.md` for the full phase-by-phase status. Short version: **Phases 3, 4, 5,
-and 6 are done** (auth & account; Listen audio player; Live Mass playback; prayer request /
-donate / push). That covers sign-in / register / forgot-password / verify-email, profile
-dashboard, edit profile (+ avatar upload), account & security (password, sessions, biometric
-app-lock, delete), saved / giving / my-prayers, the prayer-request form with 3-way visibility
-(`prayer-request.tsx` + `pray.tsx` hub), donation checkout (`donate.tsx` — native PayPal flow
-for members via `POST /api/v1/app/donate/checkout` + `PayPalCheckout` in `../allcatholicmedia`,
-hosted-page fallback for guests), push-token registration, local Rosary/Mass reminders
-(`reminders.tsx`), the **audio player** (`audio-player.tsx` — `expo-audio`, background +
-lock-screen, mini + full-screen, speed / skip / seek) with `show/[slug].tsx`, and the rebuilt
-`live.tsx` + `channel/[slug].tsx` (live streams reuse the WebView `VideoPlayerHost`).
+See `IMPLEMENTATION.md` for the full phase-by-phase status. Short version: **Phases 3–6 are
+done** — auth & account (sign-in/register/forgot-password/verify-email, profile dashboard, edit
+profile + avatar, account & security with biometric app-lock, saved/giving/my-prayers); Listen
+(audio player `audio-player.tsx` with background + lock-screen + speed/skip/seek, `show/[slug]`,
+**offline downloads** `downloads.ts` + `downloads.tsx`); Live Mass (`live.tsx` + `channel/[slug]`
+reusing the WebView `VideoPlayerHost`, countdown, PiP); prayer request (`prayer-request.tsx` +
+`pray.tsx` hub, 3-way visibility); donate (`donate.tsx` — native `POST /api/v1/app/donate/checkout`
+via `PayPalCheckout` in `../allcatholicmedia`, hosted fallback for guests); push-token
+registration; local Rosary/Mass reminders (`reminders.tsx`).
 Backend deploy still pending: `php artisan migrate` in `../allcatholicmedia`
 (`add_visibility_to_prayer_requests`, `add_guest_token_to_donations`) + PayPal-sandbox-test the
 checkout endpoint — see `IMPLEMENTATION.md` → Phase 0.
-Still ahead: offline podcast downloads (Phase 4.3), picture-in-picture (5.3), a couple of
-remaining content detail screens (article/saint already exist; video detail does not), the
-Community tab, and Phase 7–8 polish / store submission.
+Still ahead: the **Community tab** (placeholder — `/api/v1/community/*` exists, but the brand
+guide requires report/block/moderation before enabling posts), a video-detail screen (minor —
+videos already play), download-progress UI, and **Phase 7–8** (Sentry, accessibility audit,
+app icon/splash/store copy, final `app.json` name+bundle ID pending Fr. Morson sign-off, EAS
+Build, TestFlight/Play, developer accounts).
 
 > New native modules were added (`expo-local-authentication`, `expo-image-picker`;
 > `expo-notifications` was already present) with config plugins in `app.json` — a **dev-client

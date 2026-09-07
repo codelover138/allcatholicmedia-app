@@ -154,6 +154,7 @@ function Dashboard() {
           <MenuRow glyph="★" label="Saved items" hint="Reflections, videos, and prayers" onPress={() => router.push('/saved')} />
           <MenuRow glyph="✝" label="My prayer requests" hint="Intentions you've submitted" onPress={() => router.push('/my-prayers')} />
           <MenuRow glyph="♥" label="Giving history" hint="Receipts and recurring gifts" onPress={() => router.push('/giving')} />
+          <MenuRow glyph="⤓" label="Downloads" hint="Episodes saved for offline" onPress={() => router.push('/downloads')} />
           <MenuRow glyph="🔔" label="Prayer reminders" hint="Daily Rosary and Sunday Mass" onPress={() => router.push('/reminders')} />
           <MenuRow glyph="⚙" label="Account & security" hint="Password, sessions, delete account" onPress={() => router.push('/account-security')} last />
         </View>

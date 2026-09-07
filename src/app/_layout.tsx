@@ -12,18 +12,21 @@ import { LockGate } from '@/components/lock-gate';
 import { VideoPlayerHost } from '@/components/video-player';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-store';
+import { useDownloads } from '@/lib/downloads';
 import { queryClient } from '@/lib/query-client';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const hydrate = useAuth((s) => s.hydrate);
+  const hydrateAuth = useAuth((s) => s.hydrate);
+  const hydrateDownloads = useDownloads((s) => s.hydrate);
 
-  // Restore the saved session (if any) once, on cold start.
+  // Restore the saved session + downloads manifest once, on cold start.
   useEffect(() => {
-    void hydrate();
-  }, [hydrate]);
+    void hydrateAuth();
+    void hydrateDownloads();
+  }, [hydrateAuth, hydrateDownloads]);
   const base = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
   // Transparent nav background so each screen's own ScreenBackdrop is visible.
   const navTheme = { ...base, colors: { ...base.colors, background: 'transparent' } };
