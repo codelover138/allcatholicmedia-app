@@ -148,6 +148,12 @@ reusing the WebView `VideoPlayerHost`, countdown, PiP); prayer request (`prayer-
 `pray.tsx` hub, 3-way visibility); donate (`donate.tsx` — native `POST /api/v1/app/donate/checkout`
 via `PayPalCheckout` in `../allcatholicmedia`, hosted fallback for guests); push-token
 registration; local Rosary/Mass reminders (`reminders.tsx`).
+**Google/Apple sign-in** is wired in the app (`src/lib/google-auth.ts`, `authApi.googleLogin`,
+`GoogleSignInButton` on sign-in/register) against the Botble Social Login plugin's
+`POST /api/v1/auth/google`, but the button stays hidden until `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
+is set AND an admin configures Google in `../allcatholicmedia` (Settings → Social Login) +
+registers the `member` guard in that plugin's `supported` config. Needs a dev-client rebuild.
+See `IMPLEMENTATION.md` → 3.6.
 Backend deploy still pending: `php artisan migrate` in `../allcatholicmedia`
 (`add_visibility_to_prayer_requests`, `add_guest_token_to_donations`) + PayPal-sandbox-test the
 checkout endpoint — see `IMPLEMENTATION.md` → Phase 0.

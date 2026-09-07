@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Field, FormError, PasswordField } from '@/components/form';
 import { FormScreen } from '@/components/form-screen';
+import { GoogleSignInButton } from '@/components/google-button';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { ApiError } from '@/lib/api-client';
@@ -15,7 +16,7 @@ import { useFormErrors, validators } from '@/lib/form-errors';
 export default function SignInScreen() {
   const router = useRouter();
   const signIn = useAuth((s) => s.signIn);
-  const { fieldErrors, formError, setField, clear, fromError } = useFormErrors();
+  const { fieldErrors, formError, setField, setFormError, clear, fromError } = useFormErrors();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -107,6 +108,8 @@ export default function SignInScreen() {
       </Pressable>
 
       <Button label="SIGN IN" onPress={submit} loading={submitting} />
+
+      <GoogleSignInButton onError={(m) => setFormError(m || null)} />
 
       <Button label="CONTINUE AS GUEST" variant="ghost" onPress={() => router.replace('/')} />
     </FormScreen>

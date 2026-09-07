@@ -129,6 +129,13 @@ export const useAuth = create<AuthState>((set, get) => ({
         /* best effort — token may already be invalid */
       }
     }
+    // Lazy require to avoid an auth-store ↔ google-auth import cycle.
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      await (require('./google-auth') as typeof import('./google-auth')).signOutGoogle();
+    } catch {
+      /* not configured / not a native build */
+    }
     await storage.remove(TOKEN_KEY);
     set({ status: 'guest', token: null, member: null, locked: false });
     queryClient.removeQueries({ queryKey: ['account'] });

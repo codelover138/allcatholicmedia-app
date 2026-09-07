@@ -37,6 +37,15 @@ export type TokenPayload = { token: string; token_type: 'Bearer'; member: Member
 export type RegisterPending = { member: Member; requires_verification: true; message: string };
 
 export type LoginInput = { email: string; password: string; device_name?: string };
+
+// The Botble Social Login plugin uses its own `{ error, data, message }` envelope
+// (not the app's v1 shape). Success carries a Sanctum token compatible with the
+// rest of the API.
+export type SocialLoginResponse = {
+  error: boolean;
+  data: { token: string; user: { id: number; name: string | null; email: string } } | null;
+  message: string;
+};
 export type RegisterInput = {
   first_name: string;
   last_name: string;
@@ -113,6 +122,24 @@ export const authApi = {
     apiRequest<Envelope<TokenPayload | RegisterPending>>('/auth/register', {
       method: 'POST',
       body: input,
+      anonymous: true,
+      baseUrl: API_V1_ROOT_URL,
+    }),
+
+  /** Botble Social Login plugin — exchange a Google ID token for a Sanctum token. */
+  googleLogin: (identityToken: string) =>
+    apiRequest<SocialLoginResponse>('/auth/google', {
+      method: 'POST',
+      body: { identityToken, guard: 'member' },
+      anonymous: true,
+      baseUrl: API_V1_ROOT_URL,
+    }),
+
+  /** Botble Social Login plugin — exchange an Apple identity token for a Sanctum token. */
+  appleLogin: (identityToken: string) =>
+    apiRequest<SocialLoginResponse>('/auth/apple', {
+      method: 'POST',
+      body: { identityToken, guard: 'member' },
       anonymous: true,
       baseUrl: API_V1_ROOT_URL,
     }),

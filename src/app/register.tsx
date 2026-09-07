@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Field, FormError, PasswordField } from '@/components/form';
 import { FormScreen } from '@/components/form-screen';
+import { GoogleSignInButton } from '@/components/google-button';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -25,7 +26,7 @@ export default function RegisterScreen() {
   const router = useRouter();
   const theme = useTheme();
   const signIn = useAuth((s) => s.signIn);
-  const { fieldErrors, formError, setField, clear, fromError } = useFormErrors(FIELD_MAP);
+  const { fieldErrors, formError, setField, setFormError, clear, fromError } = useFormErrors(FIELD_MAP);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -190,6 +191,8 @@ export default function RegisterScreen() {
       ) : null}
 
       <Button label="CREATE ACCOUNT" onPress={submit} loading={submitting} />
+
+      <GoogleSignInButton onError={(m) => setFormError(m || null)} />
     </FormScreen>
   );
 }

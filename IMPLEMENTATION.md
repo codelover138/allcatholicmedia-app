@@ -171,6 +171,28 @@ make sure it's on in staging/production before app store submission too.
 - [x] 3.5 Avatar upload — `src/lib/image-pick.ts` (`expo-image-picker`, square crop) →
       `POST /account/avatar` (multipart) from `account-edit.tsx`; identity card shows the
       photo or initials.
+- [~] 3.6 Google / Apple sign-in — **app wiring done, needs Google Cloud creds + backend
+      config to switch on.**
+      - `src/lib/google-auth.ts` — lazy-loads `@react-native-google-signin/google-signin`
+        (installed; never imported at module scope so Expo Go / web don't break), runs the
+        native flow, POSTs the ID token to `POST /api/v1/auth/google` (Botble Social Login
+        plugin — already live on prod), stores the returned Sanctum token via
+        `useAuth.signIn()`, then refreshes the member with `authApi.me()`.
+      - `authApi.googleLogin()` / `authApi.appleLogin()` in `auth-api.ts` (handle the plugin's
+        `{ error, data, message }` envelope). `signOutGoogle()` is called from
+        `auth-store.signOut` via a lazy require.
+      - `src/components/google-button.tsx` — "Continue with Google", rendered on `sign-in.tsx`
+        + `register.tsx` **only when `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` is set**.
+      - **To enable:** (1) create OAuth client ids in Google Cloud (Web + iOS + Android);
+        (2) Botble admin → Settings → Social Login → enable Google, set `google_app_id` =
+        the **Web** client id + secret; (3) register the `member` guard in
+        `config/plugins/social-login/general.php` `supported` (currently `[]`); (4) set
+        `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` / `..._IOS_CLIENT_ID` in the app's env; (5) for iOS
+        add the config plugin `["@react-native-google-signin/google-signin", { "iosUrlScheme":
+        "com.googleusercontent.apps.<IOS_CLIENT_ID>" }]` to `app.json` plugins; (6) rebuild the
+        dev client (does **not** work in Expo Go). Apple Sign-In (`authApi.appleLogin`,
+        `/api/v1/auth/apple`) is stubbed for the same plugin but has no button yet — Apple
+        requires it on iOS if Google ships there.
 
 ---
 
