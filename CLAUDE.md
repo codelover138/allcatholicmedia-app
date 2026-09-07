@@ -51,6 +51,13 @@ missing) is `IMPLEMENTATION.md` in this directory — read that before picking u
 
 - **Expo Router**, file-based, rooted at `src/app` (see `tsconfig.json`'s `@/*` → `./src/*`
   alias and `app.json`'s router config — the root is `src/app`, *not* the top-level `app/`).
+- **Routing shape**: `src/app/_layout.tsx` is a **`<Stack>`**. The five tabs live in
+  `src/app/(tabs)/` under `(tabs)/_layout.tsx` (which renders `<AppTabs/>`). Every other screen
+  (auth, `show/[slug]`, `channel/[slug]`, `donate`, `reminders`, `downloads`, `account-*`,
+  `saved`/`giving`/`my-prayers`, `prayer-request`, legacy `live`/`listen`/`read`/`more`) is a
+  **root-level sibling of `(tabs)`**, so `router.push('/sign-in')` presents it *over* the tab
+  bar. Do **not** move these back next to the tab layout — NativeTabs only renders its declared
+  triggers, so a non-tab route there silently fails to appear on native.
 - **Tab shell has two implementations that must be kept in sync**:
   `src/components/app-tabs.tsx` (native, via `expo-router/unstable-native-tabs`) and
   `src/components/app-tabs.web.tsx` (web, via `expo-router/ui`'s `Tabs`/`TabTrigger`, since
