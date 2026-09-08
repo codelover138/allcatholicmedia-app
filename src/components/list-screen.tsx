@@ -25,6 +25,8 @@ type ListScreenProps<T> = {
   refreshing?: boolean;
 };
 
+const Separator = () => <View style={styles.sep} />;
+
 export function ListScreen<T>({
   title,
   subtitle,
@@ -61,7 +63,11 @@ export function ListScreen<T>({
           keyExtractor={keyExtractor}
           renderItem={({ item }) => renderItem(item)}
           contentContainerStyle={styles.content}
-          ItemSeparatorComponent={() => <View style={styles.sep} />}
+          ItemSeparatorComponent={Separator}
+          removeClippedSubviews
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={7}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
           onRefresh={onRefresh}

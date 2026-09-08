@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { Linking, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -7,6 +7,8 @@ import { WebView } from 'react-native-webview';
 import { ErrorState, LoadingState } from '@/components/query-state';
 import { ThemedText } from '@/components/themed-text';
 import { appContentApi, slugFromUrl, type PostDetailDTO } from '@/lib/app-content';
+
+const ARTICLE_BASE_URL = 'https://allcatholicmedia.com/';
 
 type Kind = 'read' | 'saints';
 type Current = { kind: Kind; slug: string; title?: string; url?: string } | null;
@@ -54,7 +56,17 @@ function buildHtml(d: PostDetailDTO): string {
   const hero = d.image_full ?? d.image;
   const meta = [category, date].filter(Boolean).map(escapeHtml).join(' &middot; ');
 
+  // The article body is CMS-authored HTML rendered against the real site origin.
+  // A restrictive CSP keeps a stray/injected <script> in that body from running
+  // (no `script-src`), while still allowing images, fonts and iframe embeds
+  // (YouTube, etc.) that legitimate articles use.
+  const csp =
+    "default-src 'none'; img-src https: data:; media-src https: data:; " +
+    "style-src 'unsafe-inline'; font-src https: data:; frame-src https:; " +
+    "child-src https:; connect-src https:";
+
   return `<!doctype html><html><head>
+<meta http-equiv="Content-Security-Policy" content="${csp}">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <style>
   :root { color-scheme: dark; }
@@ -105,6 +117,10 @@ export function ArticleDetailHost() {
     detail?.title ?? cur?.title ?? (cur?.kind === 'saints' ? 'Saint' : 'Article');
   const externalUrl = detail?.url ?? cur?.url;
 
+  // Building the document string re-runs the full escape/interpolation pass; only
+  // redo it when the underlying article changes, not on every render.
+  const html = useMemo(() => (detail ? buildHtml(detail) : null), [detail]);
+
   return (
     <Modal
       visible={!!cur}
@@ -129,7 +145,7 @@ export function ArticleDetailHost() {
 
         {!cur ? null : query.isLoading ? (
           <LoadingState />
-        ) : query.isError || !detail ? (
+        ) : query.isError || !detail || !html ? (
           <ErrorState message="Could not load this page." onRetry={() => query.refetch()} />
         ) : Platform.OS === 'web' ? (
           <View style={styles.body}>
@@ -138,20 +154,33 @@ export function ArticleDetailHost() {
               width="100%"
               height="100%"
               style={{ border: 'none' }}
-              srcDoc={buildHtml(detail)}
+              srcDoc={html}
             />
           </View>
         ) : (
           <WebView
             style={styles.body}
-            originWhitelist={['*']}
-            source={{ html: buildHtml(detail), baseUrl: 'https://allcatholicmedia.com/' }}
+            originWhitelist={['https://*', 'about:*', 'data:*']}
+            source={{ html, baseUrl: ARTICLE_BASE_URL }}
             onShouldStartLoadWithRequest={(req) => {
+              // Let sub-frames (YouTube/Vimeo embeds inside the article) load.
+              if (!req.isTopFrame) return true;
+              // The only top-frame load we permit is the article document itself.
+              if (
+                req.url === ARTICLE_BASE_URL ||
+                req.url === 'about:blank' ||
+                req.url.startsWith('data:')
+              ) {
+                return true;
+              }
+              // A user tap on a link goes out to the system browser; a
+              // script- or redirect-driven navigation (e.g. injected via CMS
+              // content) is refused so the in-app view can't be swapped for a
+              // look-alike page.
               if (req.navigationType === 'click' && /^https?:\/\//i.test(req.url)) {
                 Linking.openURL(req.url);
-                return false;
               }
-              return true;
+              return false;
             }}
           />
         )}

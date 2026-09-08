@@ -65,6 +65,11 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
   unauthorizedHandler = handler;
 }
 
+/** Abort a request that has made no progress for this long. Keeps a hung socket
+ *  (captive portal, dropped Wi-Fi, stalled backend) from freezing a query
+ *  indefinitely — `fetch` has no built-in timeout. */
+const DEFAULT_TIMEOUT_MS = 20_000;
+
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   query?: Record<string, string | number | boolean | undefined>;
@@ -76,6 +81,10 @@ type RequestOptions = {
   baseUrl?: string;
   /** Pre-built FormData for multipart uploads (avatar). Sent instead of `body`. */
   form?: FormData;
+  /** Caller cancellation (e.g. TanStack Query's `signal`); combined with the timeout. */
+  signal?: AbortSignal;
+  /** Override the default per-request timeout. `0` disables it. */
+  timeoutMs?: number;
 };
 
 function buildUrl(path: string, query?: RequestOptions['query'], baseUrl: string = API_BASE_URL): string {
@@ -115,20 +124,38 @@ function parseErrorEnvelope(payload: unknown, status: number): {
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', query, body, token, anonymous, baseUrl, form } = options;
+  const { method = 'GET', query, body, token, anonymous, baseUrl, form, signal, timeoutMs } = options;
 
   const ambientToken = anonymous ? null : tokenProvider?.();
   const bearer = token !== undefined ? token : ambientToken;
 
-  const response = await fetch(buildUrl(path, query, baseUrl), {
-    method,
-    headers: {
-      Accept: 'application/json',
-      ...(form ? {} : body ? { 'Content-Type': 'application/json' } : {}),
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    body: form ?? (body ? JSON.stringify(body) : undefined),
-  });
+  const controller = new AbortController();
+  const onAbort = () => controller.abort();
+  signal?.addEventListener('abort', onAbort);
+  const budget = timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const timer = budget > 0 ? setTimeout(() => controller.abort(), budget) : undefined;
+
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path, query, baseUrl), {
+      method,
+      headers: {
+        Accept: 'application/json',
+        ...(form ? {} : body ? { 'Content-Type': 'application/json' } : {}),
+        ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+      },
+      body: form ?? (body ? JSON.stringify(body) : undefined),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (controller.signal.aborted && !signal?.aborted) {
+      throw new ApiError(0, 'The request timed out. Check your connection and try again.', err, 'timeout');
+    }
+    throw err;
+  } finally {
+    if (timer) clearTimeout(timer);
+    signal?.removeEventListener('abort', onAbort);
+  }
 
   const isJson = response.headers.get('content-type')?.includes('application/json');
   const payload = isJson ? await response.json() : await response.text();

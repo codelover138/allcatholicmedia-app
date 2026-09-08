@@ -199,6 +199,8 @@ export const accountApi = {
       method: 'POST',
       form,
       baseUrl: API_V1_ROOT_URL,
+      // Image upload over a weak mobile link needs more headroom than a JSON call.
+      timeoutMs: 60_000,
     });
   },
 

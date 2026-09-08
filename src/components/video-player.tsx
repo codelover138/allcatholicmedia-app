@@ -31,7 +31,9 @@ export function playVideo(url: string | null | undefined, title?: string) {
   if (!url) return;
   const id = extractYouTubeId(url);
   if (!id) {
-    Linking.openURL(url);
+    // Fall back to opening a non-YouTube video URL externally — but only http(s),
+    // never an arbitrary scheme that could come through in API data.
+    if (/^https?:\/\//i.test(url)) Linking.openURL(url);
     return;
   }
   current = { id, title };
