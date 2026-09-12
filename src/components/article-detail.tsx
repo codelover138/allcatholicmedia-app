@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useSyncExternalStore } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import { Linking, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
+import { CommentsSheet } from '@/components/comments-sheet';
 import { ErrorState, LoadingState } from '@/components/query-state';
 import { ThemedText } from '@/components/themed-text';
 import { appContentApi, slugFromUrl, type PostDetailDTO } from '@/lib/app-content';
@@ -101,6 +102,7 @@ ${d.content ?? ''}
 /** Mount once at the app root (outside the tab navigator). */
 export function ArticleDetailHost() {
   const cur = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const [commentsOpen, setCommentsOpen] = useState(false);
 
   const query = useQuery({
     queryKey: ['article-detail', cur?.kind, cur?.slug],
@@ -121,21 +123,31 @@ export function ArticleDetailHost() {
   // redo it when the underlying article changes, not on every render.
   const html = useMemo(() => (detail ? buildHtml(detail) : null), [detail]);
 
+  const handleClose = () => {
+    setCommentsOpen(false);
+    closeArticle();
+  };
+
   return (
     <Modal
       visible={!!cur}
       animationType="slide"
-      onRequestClose={closeArticle}
+      onRequestClose={handleClose}
       statusBarTranslucent
       supportedOrientations={['portrait', 'landscape']}>
       <View style={styles.root}>
         <SafeAreaView edges={['top']} style={styles.bar}>
-          <Pressable onPress={closeArticle} hitSlop={14} style={styles.close}>
+          <Pressable onPress={handleClose} hitSlop={14} style={styles.close}>
             <ThemedText style={styles.closeGlyph}>✕</ThemedText>
           </Pressable>
           <ThemedText style={styles.title} numberOfLines={1}>
             {heading}
           </ThemedText>
+          {cur?.kind === 'read' || cur?.kind === 'saints' ? (
+            <Pressable onPress={() => setCommentsOpen(true)} hitSlop={12}>
+              <ThemedText style={styles.openExternal}>💬 Comments</ThemedText>
+            </Pressable>
+          ) : null}
           {externalUrl ? (
             <Pressable onPress={() => Linking.openURL(externalUrl)} hitSlop={12}>
               <ThemedText style={styles.openExternal}>Web ↗</ThemedText>
@@ -185,6 +197,13 @@ export function ArticleDetailHost() {
           />
         )}
       </View>
+
+      <CommentsSheet
+        visible={commentsOpen && !!cur}
+        kind={cur?.kind ?? 'read'}
+        slug={cur?.slug}
+        onClose={() => setCommentsOpen(false)}
+      />
     </Modal>
   );
 }

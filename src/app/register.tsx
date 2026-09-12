@@ -106,6 +106,7 @@ export default function RegisterScreen() {
             onChangeText={setFirstName}
             error={fieldErrors.first_name}
             autoCapitalize="words"
+            autoComplete="name-given"
             textContentType="givenName"
             placeholder="Mary"
           />
@@ -117,6 +118,7 @@ export default function RegisterScreen() {
             onChangeText={setLastName}
             error={fieldErrors.last_name}
             autoCapitalize="words"
+            autoComplete="name-family"
             textContentType="familyName"
             placeholder="Ward"
           />

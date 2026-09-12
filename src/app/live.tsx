@@ -90,7 +90,14 @@ export default function LiveScreen() {
               />
             }
             ListHeaderComponent={
-              <ThemedText style={styles.title}>Live &amp; Channels</ThemedText>
+              <View style={styles.headerRow}>
+                <ThemedText style={styles.title}>Live &amp; Channels</ThemedText>
+                <Pressable onPress={() => router.push('/watch')} hitSlop={8}>
+                  <ThemedText type="smallBold" themeColor="blue">
+                    Watch all videos ›
+                  </ThemedText>
+                </Pressable>
+              </View>
             }
             renderItem={({ item }) => {
               if (item.kind === 'header') {
@@ -217,6 +224,7 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     color: '#f3f6fa',
   },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionHeader: { letterSpacing: 1, paddingTop: Spacing.four, paddingBottom: Spacing.two },
   row: {
     flexDirection: 'row',

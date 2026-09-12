@@ -233,6 +233,35 @@ export type PostDetailDTO = {
   tags?: { id: number; name: string }[];
 };
 
+// GET/POST /api/v1/app/{read,saints}/{slug}/comments. Mirrors CommentResource
+// in ../allcatholicmedia (backed by the `fob-comment` plugin).
+export type CommentDTO = {
+  id: number;
+  author_name: string | null;
+  author_avatar: string | null;
+  is_member: boolean;
+  content: string;
+  reply_to: number | null;
+  created_at: string | null;
+  replies?: CommentDTO[];
+};
+
+export type CommentsResponse = {
+  data: CommentDTO[];
+  meta: { pagination: V1Pagination };
+};
+
+export type PostCommentResponse = {
+  data: { id: number; status: string; pending: boolean };
+};
+
+// GET /api/v1/app/videos — cross-channel "Watch" feed (paginated, optional
+// channel/live filter, sort by newest or most-viewed).
+export type VideosResponse = {
+  data: VideoDTO[];
+  meta: { pagination: V1Pagination };
+};
+
 /** Last path segment of an ACM blog URL (`…/blog/<slug>`). */
 export function slugFromUrl(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -339,14 +368,22 @@ export async function fetchLatestRosaryVideo(): Promise<RosarySpotlight | null> 
 }
 
 export const appContentApi = {
-  home: () => apiRequest<HomeResponse>('/home'),
+  // Home/channels/listen/live-now/read/saints/donate-config all hit the v1
+  // content endpoints, not the legacy /api/app/* ones: v1 wraps every one of
+  // these in `Cache::remember` (TTLs of 30s for live-now up to 300s for
+  // home/channels/listen/saints) with ETag/304 support, while the legacy
+  // controller re-runs the underlying queries (including several `count()`
+  // calls on `home`) on every single request. Response shapes are a verified
+  // superset of the legacy ones (same fields, plus additive `updated_at`/
+  // `slug`), so this is a drop-in swap — confirmed against production.
+  home: () => apiRequest<HomeResponse>('/home', { baseUrl: API_V1_BASE_URL }),
 
   homeSpotlights: () =>
     apiRequest<HomeSpotlightsResponse>('/home/spotlights', { baseUrl: API_V1_BASE_URL }),
 
   latestRosaryVideo: fetchLatestRosaryVideo,
 
-  channels: () => apiRequest<{ data: ChannelDTO[] }>('/channels'),
+  channels: () => apiRequest<{ data: ChannelDTO[] }>('/channels', { baseUrl: API_V1_BASE_URL }),
 
   channelDetail: (slug: string, params?: { page?: number }) =>
     apiRequest<ChannelDetailResponse>(`/channels/${slug}`, {
@@ -355,7 +392,7 @@ export const appContentApi = {
     }),
 
   listen: (params?: { category?: string; sort?: 'name' | 'episodes' }) =>
-    apiRequest<ListenResponse>('/listen', { query: params }),
+    apiRequest<ListenResponse>('/listen', { query: params, baseUrl: API_V1_BASE_URL }),
 
   listenDetail: (slug: string, params?: { page?: number }) =>
     apiRequest<ListenDetailResponse>(`/listen/${slug}`, {
@@ -363,13 +400,13 @@ export const appContentApi = {
       baseUrl: API_V1_BASE_URL,
     }),
 
-  liveNow: () => apiRequest<LiveNowResponse>('/live-now'),
+  liveNow: () => apiRequest<LiveNowResponse>('/live-now', { baseUrl: API_V1_BASE_URL }),
 
   read: (params?: { category?: number; q?: string; sort?: 'latest' | 'popular'; page?: number }) =>
-    apiRequest<ReadResponse>('/read', { query: params }),
+    apiRequest<ReadResponse>('/read', { query: params, baseUrl: API_V1_BASE_URL }),
 
   saints: (params?: { q?: string; letter?: string; page?: number }) =>
-    apiRequest<SaintsResponse>('/saints', { query: params }),
+    apiRequest<SaintsResponse>('/saints', { query: params, baseUrl: API_V1_BASE_URL }),
 
   search: (q: string) =>
     apiRequest<SearchResponse>('/search', { query: { q }, baseUrl: API_V1_BASE_URL }),
@@ -384,7 +421,8 @@ export const appContentApi = {
       baseUrl: API_V1_BASE_URL,
     }),
 
-  donateConfig: () => apiRequest<DonateConfigResponse>('/donate/config'),
+  donateConfig: () =>
+    apiRequest<DonateConfigResponse>('/donate/config', { baseUrl: API_V1_BASE_URL }),
 
   submitPrayerRequest: (input: PrayerRequestInput) =>
     apiRequest<PrayerRequestResponse>('/prayer-requests', {
@@ -399,6 +437,48 @@ export const appContentApi = {
     apiRequest<DonationCheckoutResponse>('/donate/checkout', {
       method: 'POST',
       body: input,
+      baseUrl: API_V1_BASE_URL,
+    }),
+
+  comments: (kind: 'read' | 'saints', slug: string, page = 1) =>
+    apiRequest<CommentsResponse>(`/${kind}/${encodeURIComponent(slug)}/comments`, {
+      query: { page },
+      baseUrl: API_V1_BASE_URL,
+    }),
+
+  // Members only — the backend requires a bearer token (`auth:sanctum`) on
+  // this route; guests are prompted to sign in before the composer appears.
+  postComment: (kind: 'read' | 'saints', slug: string, content: string, replyTo?: number) =>
+    apiRequest<PostCommentResponse>(`/${kind}/${encodeURIComponent(slug)}/comments`, {
+      method: 'POST',
+      body: { content, reply_to: replyTo },
+      baseUrl: API_V1_BASE_URL,
+    }),
+
+  videos: (params?: { channel?: string; live?: boolean; sort?: 'views'; q?: string; page?: number }) =>
+    apiRequest<VideosResponse>('/videos', { query: params, baseUrl: API_V1_BASE_URL }),
+
+  subscribeNewsletter: (email: string, name?: string) =>
+    apiRequest<{ data: { message: string } }>('/newsletter/subscribe', {
+      method: 'POST',
+      body: { email, name },
+      anonymous: true,
+      baseUrl: API_V1_BASE_URL,
+    }),
+
+  // Reuses the website's Contact plugin on the backend — needs the new
+  // `POST /api/v1/app/contact` route deployed there before this works.
+  submitContact: (input: {
+    name: string;
+    email: string;
+    content: string;
+    subject?: string;
+    agree_terms_and_policy?: boolean;
+  }) =>
+    apiRequest<{ data: { message: string } }>('/contact', {
+      method: 'POST',
+      body: input,
+      anonymous: true,
       baseUrl: API_V1_BASE_URL,
     }),
 };

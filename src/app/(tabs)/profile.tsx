@@ -156,7 +156,9 @@ function Dashboard() {
           <MenuRow glyph="♥" label="Giving history" hint="Receipts and recurring gifts" onPress={() => router.push('/giving')} />
           <MenuRow glyph="⤓" label="Downloads" hint="Episodes saved for offline" onPress={() => router.push('/downloads')} />
           <MenuRow glyph="🔔" label="Prayer reminders" hint="Daily Rosary and Sunday Mass" onPress={() => router.push('/reminders')} />
-          <MenuRow glyph="⚙" label="Account & security" hint="Password, sessions, delete account" onPress={() => router.push('/account-security')} last />
+          <MenuRow glyph="⚙" label="Account & security" hint="Password, sessions, delete account" onPress={() => router.push('/account-security')} />
+          <MenuRow glyph="✉" label="Sunday newsletter" hint="Weekly reflection by email" onPress={() => router.push('/newsletter')} />
+          <MenuRow glyph="✎" label="Contact us" hint="Questions, corrections, feedback" onPress={() => router.push('/contact')} last />
         </View>
 
         {/* Recent activity */}
@@ -213,6 +215,11 @@ function GuestState() {
         </View>
 
         <Button label="SUPPORT THE MISSION" variant="ghost" onPress={() => router.push('/donate')} />
+
+        <View style={[styles.card, styles.menu, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+          <MenuRow glyph="✉" label="Sunday newsletter" hint="Weekly reflection by email" onPress={() => router.push('/newsletter')} />
+          <MenuRow glyph="✎" label="Contact us" hint="Questions, corrections, feedback" onPress={() => router.push('/contact')} last />
+        </View>
       </View>
     </ScrollView>
   );
