@@ -23,13 +23,11 @@ type FieldProps = TextInputProps & {
 };
 
 export const Field = forwardRef<TextInput, FieldProps>(function Field(
-  { label, error, hint, accessory, style, onFocus, onBlur, ...rest },
+  { label, error, hint, accessory, style, ...rest },
   ref,
 ) {
   const theme = useTheme();
-  const [focused, setFocused] = useState(false);
-
-  const borderColor = error ? theme.danger : focused ? theme.gold : theme.border;
+  const borderColor = error ? theme.danger : theme.border;
 
   return (
     <View style={styles.fieldRoot}>
@@ -41,20 +39,11 @@ export const Field = forwardRef<TextInput, FieldProps>(function Field(
           styles.inputShell,
           { backgroundColor: theme.backgroundElement, borderColor },
           rest.multiline && styles.inputShellMultiline,
-          focused && !error && styles.inputShellFocused,
         ]}>
         <TextInput
           ref={ref}
           placeholderTextColor={theme.textSecondary}
           style={[styles.input, { color: theme.text }, style]}
-          onFocus={(e) => {
-            setFocused(true);
-            onFocus?.(e);
-          }}
-          onBlur={(e) => {
-            setFocused(false);
-            onBlur?.(e);
-          }}
           {...rest}
         />
         {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
@@ -187,13 +176,6 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   inputShellMultiline: { alignItems: 'stretch', minHeight: 96, paddingVertical: Spacing.two },
-  inputShellFocused: {
-    shadowColor: '#c9a227',
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 2,
-  },
   input: { flex: 1, fontSize: 15, paddingVertical: Spacing.two + 2 },
   accessory: { paddingLeft: Spacing.two },
   helper: { fontSize: 12, lineHeight: 16 },

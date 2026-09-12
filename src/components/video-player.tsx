@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { Linking, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -51,6 +51,10 @@ export function useVideoPlayer() {
 }
 
 const YT_ORIGIN = 'https://www.youtube.com';
+// YouTube needs the installed app's identity as the WebView document origin.
+// A youtube.com base URL identifies the embed as YouTube itself and can fail
+// with player error 153 (missing client identification).
+const APP_ORIGIN = 'https://com.allcatholicmedia.mainapp';
 
 const embedUri = (id: string, origin?: string) =>
   `${YT_ORIGIN}/embed/${id}?autoplay=1&playsinline=1&rel=0&modestbranding=1&fs=1` +
@@ -58,11 +62,9 @@ const embedUri = (id: string, origin?: string) =>
 
 // Native player. Built on the YouTube IFrame Player API rather than a bare
 // <iframe src=".../embed/..."> because the API (a) creates the player with a
-// matching `origin`, so embed-restricted channels (Vatican News, Daily Rosary
-// Meditations) play inline instead of bouncing to the watch page, and (b) gives
-// us `onError`, so a video that truly can't be embedded reports back to RN
-// instead of silently navigating away. Served with `baseUrl` so the document
-// origin is really https://www.youtube.com.
+// matching app origin and gives us `onError` so a video that truly can't be
+// embedded can be reported in the modal. The WebView base URL supplies the
+// app identity in the Referer header sent to YouTube.
 const playerHtml = (id: string) => `<!DOCTYPE html>
 <html>
 <head>
@@ -84,7 +86,7 @@ const playerHtml = (id: string) => `<!DOCTYPE html>
     new YT.Player('player', {
       videoId: ${JSON.stringify(id)},
       playerVars: { autoplay: 1, playsinline: 1, rel: 0, modestbranding: 1, fs: 1, origin: ${JSON.stringify(
-        YT_ORIGIN,
+        APP_ORIGIN,
       )} },
       events: {
         onReady: function(e){ try { e.target.playVideo(); } catch (err) {} },
@@ -102,17 +104,27 @@ const playerHtml = (id: string) => `<!DOCTYPE html>
  */
 export function VideoPlayerHost() {
   const video = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const [playbackError, setPlaybackError] = useState<{ id: string; message: string } | null>(null);
+  const error = playbackError && playbackError.id === video?.id ? playbackError.message : null;
+  const fail = (message: string) => {
+    if (video) setPlaybackError({ id: video.id, message });
+  };
+
+  const dismiss = () => {
+    setPlaybackError(null);
+    closeVideo();
+  };
 
   return (
     <Modal
       visible={!!video}
       animationType="slide"
-      onRequestClose={closeVideo}
+      onRequestClose={dismiss}
       statusBarTranslucent
       supportedOrientations={['portrait', 'landscape']}>
       <View style={styles.root}>
         <SafeAreaView edges={['top']} style={styles.bar}>
-          <Pressable onPress={closeVideo} hitSlop={14} style={styles.close}>
+          <Pressable onPress={dismiss} hitSlop={14} style={styles.close}>
             <ThemedText style={styles.closeGlyph}>✕</ThemedText>
           </Pressable>
           <ThemedText style={styles.title} numberOfLines={1}>
@@ -140,10 +152,18 @@ export function VideoPlayerHost() {
                 allowFullScreen
               />
             </View>
+          ) : error ? (
+            <View style={styles.errorPane}>
+              <ThemedText style={styles.errorText}>{error}</ThemedText>
+              <Pressable onPress={() => Linking.openURL(`https://youtu.be/${video.id}`)}>
+                <ThemedText style={styles.openExternal}>Watch on YouTube ↗</ThemedText>
+              </Pressable>
+            </View>
           ) : (
             <WebView
+              key={video.id}
               style={styles.web}
-              source={{ html: playerHtml(video.id), baseUrl: `${YT_ORIGIN}/` }}
+              source={{ html: playerHtml(video.id), baseUrl: `${APP_ORIGIN}/` }}
               originWhitelist={['*']}
               allowsInlineMediaPlayback
               allowsPictureInPictureMediaPlayback
@@ -161,7 +181,7 @@ export function VideoPlayerHost() {
                   req.isTopFrame &&
                   /^https?:\/\/(www\.)?(youtube\.com\/(watch\?|shorts\/)|youtu\.be\/)/.test(req.url);
                 if (leavingToWatchPage) {
-                  Linking.openURL(req.url);
+                  fail('This video cannot play inside the app.');
                   return false;
                 }
                 return true;
@@ -169,13 +189,15 @@ export function VideoPlayerHost() {
               onMessage={(e) => {
                 try {
                   const msg = JSON.parse(e.nativeEvent.data);
-                  // 101 / 150 = the uploader disabled embedding for this video;
-                  // it can only be watched on YouTube itself.
-                  if (msg?.type === 'error' && (msg.code === 101 || msg.code === 150)) {
-                    Linking.openURL(`https://youtu.be/${video.id}`);
-                    closeVideo();
+                  if (msg?.type === 'error') {
+                    fail(msg.code === 101 || msg.code === 150
+                      ? 'The video owner does not allow playback inside apps.'
+                      : 'This video could not play inside the app.');
                   }
                 } catch {}
+              }}
+              onError={() => {
+                fail('This video could not load inside the app.');
               }}
             />
           )
@@ -201,4 +223,6 @@ const styles = StyleSheet.create({
   title: { flex: 1, color: '#e7ecf3', fontSize: 14, fontWeight: '600' },
   openExternal: { color: '#c9a227', fontSize: 12, fontWeight: '700' },
   web: { flex: 1, backgroundColor: '#000' },
+  errorPane: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20, padding: 24 },
+  errorText: { color: '#e7ecf3', textAlign: 'center', fontSize: 15 },
 });

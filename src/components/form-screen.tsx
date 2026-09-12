@@ -65,8 +65,8 @@ export function FormScreen({
           keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}>
           <ScrollView
             contentContainerStyle={styles.scroll}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive">
+            keyboardShouldPersistTaps="always"
+            keyboardDismissMode="none">
             <View style={styles.inner}>
               <View style={styles.head}>
                 <ThemedText style={styles.title}>{title}</ThemedText>

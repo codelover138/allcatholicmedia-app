@@ -48,11 +48,24 @@ export function useFormErrors(fieldMap?: Record<string, string>) {
   return { fieldErrors, formError, setField, setFormError, clear, fromError };
 }
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_RE = /^[^\s@]+@[a-z\d](?:[a-z\d-]*[a-z\d])?(?:\.[a-z\d](?:[a-z\d-]*[a-z\d])?)+$/i;
+const EMAIL_LOCAL_RE = /^[a-z\d!#$%&'*+/=?^_`{|}~.-]+$/i;
+
+function emailError(value: string): string | undefined {
+  const email = value.trim();
+  const localPart = email.split('@')[0] ?? '';
+  if (email.length > 254 || localPart.length > 64 ||
+      localPart.startsWith('.') || localPart.endsWith('.') || localPart.includes('..') ||
+      !EMAIL_LOCAL_RE.test(localPart) ||
+      !EMAIL_RE.test(email)) {
+    return 'Enter a valid email address, such as name@example.com.';
+  }
+  return undefined;
+}
 
 export const validators = {
   required: (v: string, label = 'This field') => (v.trim() ? undefined : `${label} is required.`),
-  email: (v: string) => (EMAIL_RE.test(v.trim()) ? undefined : 'Enter a valid email address.'),
+  email: emailError,
   min: (v: string, n: number, label = 'This field') =>
     v.length >= n ? undefined : `${label} must be at least ${n} characters.`,
   match: (a: string, b: string, msg = 'Passwords do not match.') => (a === b ? undefined : msg),

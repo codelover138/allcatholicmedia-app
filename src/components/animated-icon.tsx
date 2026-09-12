@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -11,6 +11,19 @@ const DURATION = 600;
 export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
   const [visible, setVisible] = useState(true);
+
+  // Belt-and-suspenders: the overlay is meant to unmount itself via the
+  // Reanimated `entering` callback below, but that callback bridging worklets
+  // → JS has been unreliable in release builds on some devices. If it never
+  // fires, this full-screen view (see `splashOverlay`, zIndex 1000) is left
+  // sitting over the whole app — invisible once opacity animates to 0, but
+  // still eating every touch app-wide (this is what broke tapping videos and
+  // focusing text inputs after the splash). Force it closed no matter what.
+  useEffect(() => {
+    if (!animate) return;
+    const timer = setTimeout(() => setVisible(false), DURATION + 400);
+    return () => clearTimeout(timer);
+  }, [animate]);
 
   if (!visible) return null;
 
@@ -37,6 +50,7 @@ export function AnimatedSplashOverlay() {
 
   return animate ? (
     <Animated.View
+      pointerEvents="none"
       entering={splashKeyframe.duration(DURATION).withCallback((finished) => {
         'worklet';
         if (finished) {
@@ -48,6 +62,7 @@ export function AnimatedSplashOverlay() {
     </Animated.View>
   ) : (
     <View
+      pointerEvents="none"
       onLayout={() => {
         SplashScreen.hideAsync().finally(() => {
           setAnimate(true);

@@ -5,12 +5,14 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Field, FormError } from '@/components/form';
 import { FormScreen } from '@/components/form-screen';
+import { PhoneCountryPicker } from '@/components/phone-country-picker';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { appContentApi, type PrayerVisibility } from '@/lib/app-content';
 import { useAuth } from '@/lib/auth-store';
 import { useFormErrors, validators } from '@/lib/form-errors';
+import { phoneInputFromSaved, validateMobileNumber } from '@/lib/phone';
 
 const VISIBILITY: { key: PrayerVisibility; label: string; blurb: string }[] = [
   {
@@ -43,7 +45,9 @@ export default function PrayerRequestScreen() {
   const [visibility, setVisibility] = useState<PrayerVisibility>('prayer_team');
   const [name, setName] = useState(member?.name ?? '');
   const [email, setEmail] = useState(member?.email ?? '');
-  const [phone, setPhone] = useState(member?.phone ?? '');
+  const [savedPhone] = useState(() => phoneInputFromSaved(member?.phone));
+  const [phoneCountry, setPhoneCountry] = useState(savedPhone.country);
+  const [phone, setPhone] = useState(savedPhone.nationalNumber);
   const [location, setLocation] = useState('');
   const [followUp, setFollowUp] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -51,10 +55,12 @@ export default function PrayerRequestScreen() {
 
   const submit = async () => {
     clear();
+    const mobile = validateMobileNumber(phone, phoneCountry);
     const checks = {
       intention: validators.required(intention, 'Your intention'),
       full_name: validators.required(name, 'Name'),
       email: validators.required(email, 'Email') ?? validators.email(email),
+      phone: mobile.error,
     };
     if (Object.values(checks).some(Boolean)) {
       Object.entries(checks).forEach(([k, v]) => setField(k, v));
@@ -66,7 +72,7 @@ export default function PrayerRequestScreen() {
       await appContentApi.submitPrayerRequest({
         full_name: name.trim(),
         email: email.trim(),
-        phone: phone.trim() || undefined,
+        phone: mobile.number,
         location: location.trim() || undefined,
         intention: intention.trim(),
         visibility,
@@ -160,19 +166,42 @@ export default function PrayerRequestScreen() {
         label="Email"
         value={email}
         onChangeText={setEmail}
+        onBlur={() => setField('email', email.trim() ? validators.email(email) : undefined)}
         error={fieldErrors.email}
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
         hint="So the prayer team can reach you if you ask them to."
       />
-      <Field
-        label="Phone (optional)"
-        value={phone}
-        onChangeText={setPhone}
-        error={fieldErrors.phone}
-        keyboardType="phone-pad"
-      />
+      <View style={styles.phoneRow}>
+        <PhoneCountryPicker
+          country={phoneCountry}
+          onSelect={(country) => {
+            setPhoneCountry(country);
+            setField('phone', undefined);
+          }}
+        />
+        <View style={styles.phoneInput}>
+          <Field
+            label="Mobile number (optional)"
+            value={phone}
+            onChangeText={(value) => {
+              setPhone(value);
+              if (fieldErrors.phone) setField('phone', undefined);
+            }}
+            onBlur={() => setField('phone', validateMobileNumber(phone, phoneCountry).error)}
+            error={fieldErrors.phone}
+            keyboardType="phone-pad"
+            autoComplete="tel-national"
+            textContentType="telephoneNumber"
+            placeholder="Mobile number"
+            maxLength={25}
+          />
+        </View>
+      </View>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.phoneHint}>
+        Enter your local mobile number. Country code is added automatically.
+      </ThemedText>
       <Field label="Location (optional)" value={location} onChangeText={setLocation} />
 
       <Pressable
@@ -207,6 +236,9 @@ export default function PrayerRequestScreen() {
 
 const styles = StyleSheet.create({
   textArea: { minHeight: 120, textAlignVertical: 'top', paddingTop: Spacing.two },
+  phoneRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
+  phoneInput: { flex: 1 },
+  phoneHint: { marginTop: -Spacing.two },
   group: { gap: Spacing.two },
   groupLabel: { fontSize: 12.5, letterSpacing: 0.4, opacity: 0.9 },
   choice: {

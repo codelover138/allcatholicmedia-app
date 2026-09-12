@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Button, Field, FormError, PasswordField } from '@/components/form';
 import { FormScreen } from '@/components/form-screen';
 import { GoogleSignInButton } from '@/components/google-button';
+import { PhoneCountryPicker } from '@/components/phone-country-picker';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -12,6 +13,7 @@ import { authApi, isTokenPayload } from '@/lib/auth-api';
 import { useAuth } from '@/lib/auth-store';
 import { deviceName } from '@/lib/device';
 import { useFormErrors, validators } from '@/lib/form-errors';
+import { defaultPhoneCountry, validateMobileNumber } from '@/lib/phone';
 
 // Map server field names onto the form's field keys.
 const FIELD_MAP = {
@@ -32,6 +34,7 @@ export default function RegisterScreen() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [phoneCountry, setPhoneCountry] = useState(defaultPhoneCountry);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -39,12 +42,14 @@ export default function RegisterScreen() {
 
   const submit = async () => {
     clear();
+    const mobile = validateMobileNumber(phone, phoneCountry);
     const checks: Record<string, string | undefined> = {
       first_name: validators.required(firstName, 'First name'),
       last_name: validators.required(lastName, 'Last name'),
       email: validators.required(email, 'Email') ?? validators.email(email),
+      phone: mobile.error,
       password: validators.required(password, 'Password') ?? validators.min(password, 8, 'Password'),
-      confirm: validators.match(password, confirm),
+      confirm: validators.required(confirm, 'Confirm password') ?? validators.match(password, confirm),
     };
     if (Object.values(checks).some(Boolean)) {
       Object.entries(checks).forEach(([k, v]) => setField(k, v));
@@ -61,7 +66,7 @@ export default function RegisterScreen() {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         email: email.trim(),
-        phone: phone.trim() || undefined,
+        phone: mobile.number,
         password,
         password_confirmation: confirm,
         device_name: deviceName(),
@@ -129,6 +134,7 @@ export default function RegisterScreen() {
         label="Email"
         value={email}
         onChangeText={setEmail}
+        onBlur={() => setField('email', email.trim() ? validators.email(email) : undefined)}
         error={fieldErrors.email}
         keyboardType="email-address"
         autoCapitalize="none"
@@ -138,15 +144,35 @@ export default function RegisterScreen() {
         placeholder="you@example.com"
       />
 
-      <Field
-        label="Phone (optional)"
-        value={phone}
-        onChangeText={setPhone}
-        error={fieldErrors.phone}
-        keyboardType="phone-pad"
-        textContentType="telephoneNumber"
-        placeholder="For prayer-team follow-up only"
-      />
+      <View style={styles.phoneRow}>
+        <PhoneCountryPicker
+          country={phoneCountry}
+          onSelect={(country) => {
+            setPhoneCountry(country);
+            setField('phone', undefined);
+          }}
+        />
+        <View style={styles.phoneInput}>
+          <Field
+            label="Mobile number (optional)"
+            value={phone}
+            onChangeText={(value) => {
+              setPhone(value);
+              if (fieldErrors.phone) setField('phone', undefined);
+            }}
+            onBlur={() => setField('phone', validateMobileNumber(phone, phoneCountry).error)}
+            error={fieldErrors.phone}
+            keyboardType="phone-pad"
+            autoComplete="tel-national"
+            textContentType="telephoneNumber"
+            placeholder="Mobile number"
+            maxLength={25}
+          />
+        </View>
+      </View>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.phoneHint}>
+        Enter your local mobile number. Country code is added automatically.
+      </ThemedText>
 
       <PasswordField
         label="Password"
@@ -202,6 +228,9 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: Spacing.three },
   rowItem: { flex: 1 },
+  phoneRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
+  phoneInput: { flex: 1 },
+  phoneHint: { marginTop: -Spacing.two },
   footerRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flexWrap: 'wrap' },
   consent: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
   checkbox: {
