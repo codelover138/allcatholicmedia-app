@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Link } from 'expo-router';
 import {
   Tabs,
   TabList,
@@ -6,94 +8,212 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View, StyleSheet } from 'react-native';
 
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
-import { MaxContentWidth, Spacing } from '@/constants/theme';
-
-// Keep this list in sync with the native tab shell in `app-tabs.tsx`.
-const TABS = [
-  { name: 'home', href: '/', label: 'Home' },
-  { name: 'explore', href: '/explore', label: 'Explore' },
-  { name: 'pray', href: '/pray', label: 'Pray' },
-  { name: 'community', href: '/community', label: 'Community' },
-  { name: 'profile', href: '/profile', label: 'Profile' },
-] as const;
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function AppTabs() {
   return (
-    <Tabs>
-      <TabSlot style={{ height: '100%' }} />
-      <TabList asChild>
+    <Tabs style={{ flex: 1 }}>
+      <TabList asChild style={styles.topTabList}>
         <CustomTabList>
-          {TABS.map((t) => (
-            <TabTrigger key={t.name} name={t.name} href={t.href} asChild>
-              <TabButton>{t.label}</TabButton>
-            </TabTrigger>
-          ))}
+          <TabTrigger name="home" href="/" asChild>
+            <TabButton icon="home-outline" activeIcon="home">
+              Home
+            </TabButton>
+          </TabTrigger>
+          <TabTrigger name="live" href="/live" asChild>
+            <TabButton icon="radio-outline" activeIcon="radio">
+              Live
+            </TabButton>
+          </TabTrigger>
+          <TabTrigger name="listen" href="/listen" asChild>
+            <TabButton icon="headset-outline" activeIcon="headset">
+              Listen
+            </TabButton>
+          </TabTrigger>
+          <TabTrigger name="read" href="/read" asChild>
+            <TabButton icon="book-outline" activeIcon="book">
+              Read
+            </TabButton>
+          </TabTrigger>
+          <TabTrigger name="more" href="/more" asChild>
+            <TabButton icon="grid-outline" activeIcon="grid">
+              More
+            </TabButton>
+          </TabTrigger>
         </CustomTabList>
       </TabList>
+      <TabSlot style={styles.slotContent} />
     </Tabs>
   );
 }
 
-export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+export function TabButton({
+  children,
+  isFocused,
+  icon,
+  activeIcon,
+  ...props
+}: TabTriggerSlotProps & { icon: keyof typeof Ionicons.glyphMap; activeIcon: keyof typeof Ionicons.glyphMap }) {
+  const theme = useTheme();
+
   return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'gold' : 'textSecondary'}>
+    <Pressable {...props} style={({ pressed }) => [styles.tabPressable, pressed && styles.pressed]}>
+      <View
+        style={[
+          styles.tabButtonView,
+          {
+            backgroundColor: isFocused ? theme.accentLight : 'transparent',
+            borderColor: isFocused ? theme.accentSoft : 'transparent',
+          },
+        ]}>
+        <Ionicons
+          name={isFocused ? activeIcon : icon}
+          size={16}
+          color={isFocused ? theme.accent : theme.textSecondary}
+        />
+        <ThemedText
+          type="smallBold"
+          style={[
+            styles.tabLabel,
+            { color: isFocused ? theme.accent : theme.textSecondary },
+          ]}>
           {children}
         </ThemedText>
-      </ThemedView>
+      </View>
     </Pressable>
   );
 }
 
 export function CustomTabList(props: TabListProps) {
+  const theme = useTheme();
+
   return (
     <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          All Catholic Media
-        </ThemedText>
-        {props.children}
+      <ThemedView variant="glass" style={[styles.innerContainer, { borderColor: theme.border }]}>
+        <Link href="/" asChild>
+          <Pressable style={styles.brandContainer}>
+            <View style={[styles.brandEmblem, { backgroundColor: theme.accent }]}>
+              <Ionicons name="sparkles" size={14} color="#ffffff" />
+            </View>
+            <View style={styles.brandTextGroup}>
+              <ThemedText type="smallBold" style={styles.brandTitle}>
+                Fr. Morsin Livingston
+              </ThemedText>
+              <ThemedText type="badge" themeColor="gold" style={styles.brandSubtitle}>
+                ALL CATHOLIC MEDIA
+              </ThemedText>
+            </View>
+          </Pressable>
+        </Link>
+
+        <View style={styles.triggersGroup}>{props.children}</View>
+
+        <Link href="/more" asChild>
+          <Pressable
+            style={({ pressed }) => [
+              styles.donateButton,
+              { backgroundColor: theme.gold },
+              pressed && { opacity: 0.85 },
+            ]}>
+            <Ionicons name="heart" size={14} color="#ffffff" />
+            <ThemedText type="smallBold" style={{ color: '#ffffff', fontSize: 12 }}>
+              Donate
+            </ThemedText>
+          </Pressable>
+        </Link>
       </ThemedView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  topTabList: {
+    zIndex: 100,
+  },
+  slotContent: {
+    flex: 1,
+  },
   tabListContainer: {
-    position: 'absolute',
+    position: 'relative',
     width: '100%',
-    padding: Spacing.three,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.one,
     justifyContent: 'center',
     alignItems: 'center',
-    flexDirection: 'row',
+    zIndex: 100,
   },
   innerContainer: {
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.full,
     flexDirection: 'row',
     alignItems: 'center',
-    flexGrow: 1,
-    gap: Spacing.two,
+    justifyContent: 'space-between',
+    width: '100%',
     maxWidth: MaxContentWidth,
+    gap: Spacing.two,
   },
-  brandText: {
-    marginRight: 'auto',
+  brandContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  brandEmblem: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandTextGroup: {
+    justifyContent: 'center',
+  },
+  brandTitle: {
+    fontSize: 14,
+    lineHeight: 16,
+  },
+  brandSubtitle: {
+    fontSize: 9,
+    lineHeight: 11,
+    letterSpacing: 0.5,
+  },
+  triggersGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  tabPressable: {
+    borderRadius: Radius.full,
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.75,
   },
   tabButtonView: {
-    paddingVertical: Spacing.one,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.oneHalf,
+    paddingVertical: Spacing.oneHalf,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+  },
+  tabLabel: {
+    fontSize: 13,
+  },
+  donateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingVertical: Spacing.oneHalf,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.full,
   },
 });
+

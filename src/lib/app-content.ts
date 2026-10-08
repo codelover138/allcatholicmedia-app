@@ -482,3 +482,16 @@ export const appContentApi = {
       baseUrl: API_V1_BASE_URL,
     }),
 };
+
+const BASE_DOMAIN = 'https://allcatholicmedia.com';
+
+export function resolveImageUrl(url?: string | null): string | null {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  if (url.startsWith('/')) {
+    return `${BASE_DOMAIN}${url}`;
+  }
+  return `${BASE_DOMAIN}/${url}`;
+}

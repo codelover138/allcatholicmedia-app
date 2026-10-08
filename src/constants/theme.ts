@@ -9,38 +9,44 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#f3f6fa',
-    background: '#0f1830',
-    backgroundElement: '#17294c',
-    backgroundSelected: '#213257',
-    textSecondary: '#b9c4d6',
-    border: '#45618f',
-    accent: '#f3f6fa',
-    accentSoft: '#d8e2f1',
-    gold: '#c9a227',
-    goldPressed: '#a88520',
-    goldSoft: '#2e2a1b',
-    blue: '#4c8dff',
-    live: '#ff7d7d',
-    danger: '#ff6b6b',
-    success: '#5dd1a0',
+    text: '#1c1613',
+    textSecondary: '#6e5f54',
+    textMuted: '#9e8e82',
+    background: '#f8f6f2',
+    backgroundElement: '#ffffff',
+    backgroundSelected: '#f2e8d8',
+    backgroundElevated: '#ffffff',
+    border: '#e7dfd4',
+    borderLight: '#f3ede4',
+    accent: '#801429',
+    accentSoft: '#ba3048',
+    accentLight: '#fdf0f2',
+    gold: '#b8860b',
+    goldSoft: '#f9f4e8',
+    live: '#d92534',
+    liveSoft: 'rgba(217, 37, 52, 0.1)',
+    cardShadow: 'rgba(28, 22, 19, 0.05)',
+    glass: 'rgba(255, 255, 255, 0.85)',
   },
   dark: {
-    text: '#f3f6fa',
-    background: '#0f1830',
-    backgroundElement: '#17294c',
-    backgroundSelected: '#213257',
-    textSecondary: '#b9c4d6',
-    border: '#45618f',
-    accent: '#f3f6fa',
-    accentSoft: '#d8e2f1',
-    gold: '#c9a227',
-    goldPressed: '#a88520',
-    goldSoft: '#2e2a1b',
-    blue: '#4c8dff',
-    live: '#ff7d7d',
-    danger: '#ff6b6b',
-    success: '#5dd1a0',
+    text: '#f5eee6',
+    textSecondary: '#a8988b',
+    textMuted: '#786a5e',
+    background: '#120e0c',
+    backgroundElement: '#1c1613',
+    backgroundSelected: '#32261e',
+    backgroundElevated: '#251e19',
+    border: '#2e2520',
+    borderLight: '#241c17',
+    accent: '#e85d75',
+    accentSoft: '#c74259',
+    accentLight: '#2c171b',
+    gold: '#e5b854',
+    goldSoft: '#2a2418',
+    live: '#ff4d5a',
+    liveSoft: 'rgba(255, 77, 90, 0.15)',
+    cardShadow: 'rgba(0, 0, 0, 0.4)',
+    glass: 'rgba(28, 22, 19, 0.85)',
   },
 } as const;
 
@@ -48,18 +54,14 @@ export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
     sans: 'normal',
-    serif: 'Georgia',
+    serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
   },
@@ -74,12 +76,23 @@ export const Fonts = Platform.select({
 export const Spacing = {
   half: 2,
   one: 4,
+  oneHalf: 6,
   two: 8,
   three: 16,
   four: 24,
   five: 32,
-  six: 64,
+  six: 48,
+  seven: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+export const Radius = {
+  small: 8,
+  medium: 12,
+  large: 16,
+  xlarge: 24,
+  full: 9999,
+} as const;
+
+export const BottomTabInset = Platform.select({ ios: 60, android: 80, web: 76 }) ?? 60;
+export const MaxContentWidth = 840;
+

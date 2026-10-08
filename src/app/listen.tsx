@@ -1,189 +1,239 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppHeader } from '@/components/app-header';
+import { PodcastEpisodesModal } from '@/components/podcast-episodes-modal';
 import { EmptyState, ErrorState, LoadingState } from '@/components/query-state';
-import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
+import { ThemedView } from '@/components/themed-view';
+import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { appContentApi, mediaUrl, type PodcastShowDTO } from '@/lib/app-content';
+import { appContentApi, type PodcastShowDTO } from '@/lib/app-content';
 
 export default function ListenScreen() {
   const theme = useTheme();
-  const router = useRouter();
-  const [category, setCategory] = useState<string | null>(null);
+  const [selectedShow, setSelectedShow] = useState<PodcastShowDTO | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const listenQuery = useQuery({
-    queryKey: ['app', 'listen', category],
-    queryFn: () => appContentApi.listen(category ? { category } : undefined),
+    queryKey: ['app', 'listen'],
+    queryFn: () => appContentApi.listen(),
   });
 
-  const data = listenQuery.data?.data;
-  const categories = data?.categories ?? [];
-  const shows = data?.shows ?? [];
+  const queryLower = searchQuery.toLowerCase().trim();
+  const shows = (listenQuery.data?.data.shows ?? []).filter(
+    (s) => !queryLower || s.name.toLowerCase().includes(queryLower) || (s.category && s.category.toLowerCase().includes(queryLower))
+  );
 
   return (
-    <ScreenBackground>
-      <SafeAreaView edges={['top']} style={styles.safe}>
-        <AppHeader />
-        <FlatList
-          data={shows}
-          keyExtractor={(s) => s.slug}
-          contentContainerStyle={styles.content}
-          ItemSeparatorComponent={() => <View style={styles.sep} />}
-          refreshControl={
-            <RefreshControl
-              refreshing={listenQuery.isRefetching}
-              onRefresh={() => listenQuery.refetch()}
-              tintColor={theme.textSecondary}
-            />
-          }
-          ListHeaderComponent={
-            <View style={styles.head}>
-              <View style={styles.titleRow}>
-                <ThemedText style={styles.title}>Listen</ThemedText>
-                <Pressable onPress={() => router.push('/downloads')} hitSlop={8}>
-                  <ThemedText type="small" themeColor="blue">
-                    Downloads ›
-                  </ThemedText>
+    <>
+      <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: theme.background }]}>
+        <View style={styles.maxContainer}>
+          <View style={styles.header}>
+            <ThemedText type="sectionHeader" themeColor="gold">
+              FR. MORSIN LIVINGSTON AUDIO MINISTRY
+            </ThemedText>
+            <ThemedText type="heroTitle" style={styles.title}>
+              Listen & Podcasts
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary" style={{ marginBottom: 12 }}>
+              Daily audio discourses, Rosary prayers & homilies by Fr. Morsin Livingston
+            </ThemedText>
+
+            {/* Search Input Bar */}
+            <View style={[styles.searchBar, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+              <Ionicons name="search" size={16} color={theme.textSecondary} />
+              <TextInput
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search podcast shows or topics..."
+                placeholderTextColor={theme.textMuted}
+                style={[styles.searchInput, { color: theme.text }]}
+              />
+              {searchQuery ? (
+                <Pressable onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={16} color={theme.textSecondary} />
                 </Pressable>
-              </View>
-              <ThemedText type="small" themeColor="textSecondary">
-                Homilies, reflections, and the Rosary — for the commute, the walk, the quiet hour.
-              </ThemedText>
-              {categories.length ? (
-                <View style={styles.chips}>
-                  <Chip label="All" active={!category} onPress={() => setCategory(null)} />
-                  {categories.map((c) => (
-                    <Chip key={c} label={c} active={category === c} onPress={() => setCategory(c)} />
-                  ))}
-                </View>
               ) : null}
             </View>
-          }
-          ListEmptyComponent={
-            listenQuery.isLoading ? (
-              <LoadingState />
-            ) : listenQuery.isError ? (
-              <ErrorState message="Could not load podcasts." onRetry={() => listenQuery.refetch()} />
-            ) : (
-              <EmptyState message="No podcasts published yet." />
-            )
-          }
-          renderItem={({ item }) => (
-            <ShowRow show={item} onPress={() => router.push(`/show/${item.slug}`)} />
-          )}
-        />
+          </View>
+
+          {listenQuery.isLoading ? <LoadingState message="Loading podcasts..." /> : null}
+          {listenQuery.isError ? (
+            <ErrorState
+              message={
+                listenQuery.error instanceof Error
+                  ? listenQuery.error.message
+                  : 'Could not load podcasts.'
+              }
+              onRetry={() => listenQuery.refetch()}
+            />
+          ) : null}
+          {listenQuery.data && shows.length === 0 ? (
+            <EmptyState message="No podcasts matching your search." />
+          ) : null}
+
+          {shows.length > 0 ? (
+            <FlatList
+              data={shows}
+              keyExtractor={(show) => show.slug}
+              contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.six }}
+              refreshControl={
+                <RefreshControl refreshing={listenQuery.isRefetching} onRefresh={() => listenQuery.refetch()} />
+              }
+              renderItem={({ item }) => (
+                <ShowRow show={item} onSelectShow={() => setSelectedShow(item)} />
+              )}
+            />
+          ) : null}
+        </View>
       </SafeAreaView>
-    </ScreenBackground>
+
+      <PodcastEpisodesModal show={selectedShow} onClose={() => setSelectedShow(null)} />
+    </>
   );
 }
 
-function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function ShowRow({ show, onSelectShow }: { show: PodcastShowDTO; onSelectShow: () => void }) {
   const theme = useTheme();
-  return (
-    <ThemedText
-      onPress={onPress}
-      style={[
-        styles.chip,
-        { borderColor: active ? theme.gold : theme.border, color: theme.text },
-        active && { backgroundColor: theme.gold, color: '#0d1f3c' },
-      ]}>
-      {label}
-    </ThemedText>
-  );
-}
 
-function ShowRow({ show, onPress }: { show: PodcastShowDTO; onPress: () => void }) {
-  const theme = useTheme();
-  const art = mediaUrl(show.thumbnail);
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.row,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-        pressed && styles.pressed,
-      ]}>
-      <View style={[styles.thumb, { backgroundColor: theme.backgroundSelected }]}>
-        {art ? (
-          <Image source={{ uri: art }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
-        ) : (
-          <ThemedText themeColor="gold" style={styles.thumbGlyph}>
-            ♪
+    <Pressable onPress={onSelectShow} style={({ pressed }) => [styles.rowPressable, pressed && styles.pressed]}>
+      <ThemedView variant="elevated" style={styles.showRow}>
+        <View style={styles.thumbWrap}>
+          {show.thumbnail ? (
+            <Image source={{ uri: show.thumbnail }} style={styles.thumb} contentFit="cover" />
+          ) : (
+            <View style={[styles.thumbPlaceholder, { backgroundColor: theme.goldSoft }]}>
+              <Ionicons name="headset" size={24} color={theme.gold} />
+            </View>
+          )}
+        </View>
+
+        <View style={styles.rowBody}>
+          {show.category ? (
+            <View style={[styles.categoryPill, { backgroundColor: theme.goldSoft }]}>
+              <ThemedText type="badge" themeColor="gold">
+                {show.category}
+              </ThemedText>
+            </View>
+          ) : null}
+
+          <ThemedText type="subtitle" numberOfLines={1} style={styles.showName}>
+            {show.name}
           </ThemedText>
-        )}
-      </View>
-      <View style={styles.rowBody}>
-        <ThemedText style={styles.rowTitle} numberOfLines={1}>
-          {show.name}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          {[show.category, `${show.episodes_count} episodes`].filter(Boolean).join(' · ')}
-        </ThemedText>
-      </View>
-      <ThemedText themeColor="textSecondary" style={styles.chevron}>
-        ›
-      </ThemedText>
+
+          <View style={styles.metaRow}>
+            <Ionicons name="mic-outline" size={14} color={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary">
+              {show.episodes_count} episodes
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={[styles.playButton, { backgroundColor: theme.accent }]}>
+          <Ionicons name="play" size={16} color="#ffffff" />
+        </View>
+      </ThemedView>
     </Pressable>
   );
 }
 
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: 'transparent' },
-  content: {
-    paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.six,
-    alignSelf: 'center',
+  flex: {
+    flex: 1,
+  },
+  maxContainer: {
+    flex: 1,
     width: '100%',
     maxWidth: MaxContentWidth,
-    flexGrow: 1,
+    alignSelf: 'center',
   },
-  head: { gap: Spacing.two, paddingBottom: Spacing.three },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: {
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.two,
+    gap: Spacing.half,
+  },
   title: {
-    fontFamily: Fonts.serif,
-    fontWeight: '700',
-    fontSize: 26,
-    lineHeight: 32,
-    color: '#f3f6fa',
+    marginTop: Spacing.half,
   },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.one },
-  chip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: Spacing.three - 2,
-    paddingVertical: Spacing.two - 1,
-    fontSize: 13,
-    fontWeight: '600',
-    overflow: 'hidden',
-  },
-  sep: { height: Spacing.two + 2 },
-  row: {
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.oneHalf,
+    borderRadius: Radius.full,
     borderWidth: 1,
-    borderRadius: 12,
-    padding: Spacing.two + 2,
+    marginTop: Spacing.two,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    padding: 0,
+  },
+  rowPressable: {
+    marginHorizontal: Spacing.four,
+    marginBottom: Spacing.three,
+  },
+  showRow: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    alignItems: 'center',
+  },
+  rowBody: {
+    flex: 1,
+    gap: Spacing.half,
+  },
+  categoryPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 2,
+    borderRadius: Radius.full,
+  },
+  showName: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+  },
+  thumbWrap: {
+    position: 'relative',
+    width: 68,
+    height: 68,
+    borderRadius: Radius.medium,
+    overflow: 'hidden',
   },
   thumb: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
-    overflow: 'hidden',
+    width: 68,
+    height: 68,
+    borderRadius: Radius.medium,
+  },
+  thumbPlaceholder: {
+    width: 68,
+    height: 68,
+    borderRadius: Radius.medium,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  thumbGlyph: { fontSize: 22 },
-  rowBody: { flex: 1, minWidth: 0, gap: 2 },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: '#f3f6fa' },
-  chevron: { fontSize: 20 },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
+  playButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.85,
+  },
 });
+

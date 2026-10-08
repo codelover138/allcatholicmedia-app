@@ -1,17 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppHeader } from '@/components/app-header';
 import { EmptyState, ErrorState, LoadingState } from '@/components/query-state';
-import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
-import { playVideo } from '@/components/video-player';
-import { BottomTabInset, Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
+import { ThemedView } from '@/components/themed-view';
+import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { appContentApi, type ChannelDTO, type LiveStreamDTO } from '@/lib/app-content';
+import { useAppStore } from '@/lib/app-store';
 
 type Row =
   | { kind: 'header'; title: string }
@@ -19,254 +19,408 @@ type Row =
   | { kind: 'channel'; channel: ChannelDTO }
   | { kind: 'empty'; message: string };
 
-/** "in 2 hr 15 min" / "in 3 days" / null when past or missing. */
-function timeUntil(iso: string | null): string | null {
-  if (!iso) return null;
-  const ms = new Date(iso).getTime() - Date.now();
-  if (Number.isNaN(ms) || ms <= 0) return null;
-  const mins = Math.round(ms / 60000);
-  if (mins < 60) return `in ${mins} min`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `in ${hrs} hr${hrs === 1 ? '' : 's'}`;
-  const days = Math.round(hrs / 24);
-  return `in ${days} day${days === 1 ? '' : 's'}`;
-}
-
 export default function LiveScreen() {
-  const router = useRouter();
   const theme = useTheme();
+  const openVideoModal = useAppStore((state) => state.openVideoModal);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const liveNowQuery = useQuery({ queryKey: ['app', 'live-now'], queryFn: appContentApi.liveNow });
-  const channelsQuery = useQuery({ queryKey: ['app', 'channels'], queryFn: appContentApi.channels });
+  const liveNowQuery = useQuery({
+    queryKey: ['app', 'live-now'],
+    queryFn: appContentApi.liveNow,
+  });
+
+  const channelsQuery = useQuery({
+    queryKey: ['app', 'channels'],
+    queryFn: appContentApi.channels,
+  });
 
   const isLoading = liveNowQuery.isLoading || channelsQuery.isLoading;
-  const isError = liveNowQuery.isError && channelsQuery.isError;
-  const refetch = () => {
-    liveNowQuery.refetch();
-    channelsQuery.refetch();
-  };
+  const isError = liveNowQuery.isError || channelsQuery.isError;
 
   const rows: Row[] = [];
+  const queryLower = searchQuery.toLowerCase().trim();
+
   if (liveNowQuery.data) {
-    const { live_now, upcoming } = liveNowQuery.data.data;
-    rows.push({ kind: 'header', title: 'Live now' });
-    if (live_now.length === 0) {
-      rows.push({ kind: 'empty', message: 'Nothing live right now — see what’s upcoming below.' });
+    const filteredLive = liveNowQuery.data.data.live_now.filter(
+      (s) => !queryLower || s.title.toLowerCase().includes(queryLower)
+    );
+    const filteredUpcoming = liveNowQuery.data.data.upcoming.filter(
+      (s) => !queryLower || s.title.toLowerCase().includes(queryLower)
+    );
+
+    rows.push({ kind: 'header', title: 'Live Now' });
+    if (filteredLive.length === 0) {
+      rows.push({ kind: 'empty', message: 'Nothing live right now — check upcoming broadcasts below.' });
     } else {
-      for (const stream of live_now) rows.push({ kind: 'stream', stream });
+      for (const stream of filteredLive) rows.push({ kind: 'stream', stream });
     }
-    if (upcoming.length > 0) {
-      rows.push({ kind: 'header', title: 'Upcoming' });
-      for (const stream of upcoming) rows.push({ kind: 'stream', stream });
+
+    if (filteredUpcoming.length > 0) {
+      rows.push({ kind: 'header', title: 'Upcoming Broadcasts' });
+      for (const stream of filteredUpcoming) rows.push({ kind: 'stream', stream });
     }
   }
+
   if (channelsQuery.data) {
-    rows.push({ kind: 'header', title: 'Channels' });
-    if (channelsQuery.data.data.length === 0) {
-      rows.push({ kind: 'empty', message: 'No channels yet.' });
+    const filteredChannels = channelsQuery.data.data.filter(
+      (c) => !queryLower || c.name.toLowerCase().includes(queryLower)
+    );
+
+    rows.push({ kind: 'header', title: 'Featured Channels' });
+    if (filteredChannels.length === 0) {
+      rows.push({ kind: 'empty', message: 'No channels matching search.' });
     } else {
-      for (const channel of channelsQuery.data.data) rows.push({ kind: 'channel', channel });
+      for (const channel of filteredChannels) rows.push({ kind: 'channel', channel });
     }
   }
 
   return (
-    <ScreenBackground>
-      <SafeAreaView edges={['top']} style={styles.safe}>
-        <AppHeader />
-        {isLoading ? (
-          <LoadingState />
-        ) : isError ? (
-          <ErrorState message="Could not load live streams and channels." onRetry={refetch} />
-        ) : (
+    <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: theme.background }]}>
+      <View style={styles.maxContainer}>
+        <View style={styles.header}>
+          <ThemedText type="sectionHeader" themeColor="gold">
+            FR. MORSIN LIVINGSTON BROADCAST NETWORK
+          </ThemedText>
+          <ThemedText type="heroTitle" style={styles.title}>
+            Live TV & Channels
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" style={{ marginBottom: 12 }}>
+            Live Mass, Holy Adoration & Catholic Television by Fr. Morsin Livingston
+          </ThemedText>
+
+          {/* Search Input Bar */}
+          <View style={[styles.searchBar, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+            <Ionicons name="search" size={16} color={theme.textSecondary} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search streams or channels..."
+              placeholderTextColor={theme.textMuted}
+              style={[styles.searchInput, { color: theme.text }]}
+            />
+            {searchQuery ? (
+              <Pressable onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={16} color={theme.textSecondary} />
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+
+        {isLoading ? <LoadingState message="Loading broadcasts..." /> : null}
+        {isError ? (
+          <ErrorState
+            message="Could not load live streams and channels."
+            onRetry={() => {
+              liveNowQuery.refetch();
+              channelsQuery.refetch();
+            }}
+          />
+        ) : null}
+
+        {!isLoading && !isError ? (
           <FlatList
             data={rows}
-            keyExtractor={(row, i) => `${row.kind}-${i}`}
-            contentContainerStyle={styles.content}
+            keyExtractor={(row, index) => `${row.kind}-${index}`}
+            contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.six }}
             refreshControl={
               <RefreshControl
                 refreshing={liveNowQuery.isRefetching || channelsQuery.isRefetching}
-                onRefresh={refetch}
-                tintColor={theme.textSecondary}
+                onRefresh={() => {
+                  liveNowQuery.refetch();
+                  channelsQuery.refetch();
+                }}
               />
-            }
-            ListHeaderComponent={
-              <View style={styles.headerRow}>
-                <ThemedText style={styles.title}>Live &amp; Channels</ThemedText>
-                <Pressable onPress={() => router.push('/watch')} hitSlop={8}>
-                  <ThemedText type="smallBold" themeColor="blue">
-                    Watch all videos ›
-                  </ThemedText>
-                </Pressable>
-              </View>
             }
             renderItem={({ item }) => {
               if (item.kind === 'header') {
                 return (
-                  <ThemedText type="smallBold" themeColor="gold" style={styles.sectionHeader}>
-                    {item.title.toUpperCase()}
-                  </ThemedText>
+                  <View style={styles.sectionHeaderWrap}>
+                    <ThemedText type="sectionHeader" themeColor="gold">
+                      {item.title}
+                    </ThemedText>
+                  </View>
                 );
               }
-              if (item.kind === 'empty') return <EmptyState message={item.message} />;
+              if (item.kind === 'empty') {
+                return <EmptyState message={item.message} />;
+              }
               if (item.kind === 'stream') {
-                return <StreamRow stream={item.stream} onPress={() => playVideo(item.stream.embed_url, item.stream.title)} />;
+                return (
+                  <StreamRow
+                    stream={item.stream}
+                    onOpenPlayer={() =>
+                      openVideoModal(
+                        item.stream.embed_url || 'https://www.youtube.com/embed/live_stream',
+                        item.stream.title
+                      )
+                    }
+                  />
+                );
               }
               return (
-                <ChannelRow channel={item.channel} onPress={() => router.push(`/channel/${item.channel.slug}`)} />
+                <ChannelRow
+                  channel={item.channel}
+                  onOpenChannel={() =>
+                    openVideoModal(
+                      item.channel.latest_video?.embed_url ||
+                        `https://www.youtube.com/results?search_query=${encodeURIComponent(item.channel.name)}`,
+                      item.channel.name
+                    )
+                  }
+                />
               );
             }}
           />
-        )}
-      </SafeAreaView>
-    </ScreenBackground>
+        ) : null}
+      </View>
+    </SafeAreaView>
   );
 }
 
-function StreamRow({ stream, onPress }: { stream: LiveStreamDTO; onPress: () => void }) {
+function StreamRow({ stream, onOpenPlayer }: { stream: LiveStreamDTO; onOpenPlayer: () => void }) {
   const theme = useTheme();
-  const soon = timeUntil(stream.scheduled_at);
-  const playable = stream.is_live && !!stream.embed_url;
+
   return (
-    <Pressable
-      onPress={playable ? onPress : undefined}
-      disabled={!playable}
-      style={({ pressed }) => [
-        styles.row,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-        pressed && styles.pressed,
-        !playable && styles.rowMuted,
-      ]}>
-      <View style={[styles.thumb, { backgroundColor: theme.backgroundSelected }]}>
-        {stream.thumbnail ? (
-          <Image source={{ uri: stream.thumbnail }} style={StyleSheet.absoluteFill} contentFit="cover" />
-        ) : null}
-        {playable ? (
-          <View style={styles.playPill}>
-            <ThemedText style={styles.playGlyph}>▶</ThemedText>
-          </View>
-        ) : null}
-      </View>
-      <View style={styles.rowBody}>
-        <ThemedText style={styles.rowTitle} numberOfLines={2}>
-          {stream.title}
-        </ThemedText>
-        <View style={styles.metaRow}>
-          {stream.is_live ? (
-            <>
-              <View style={styles.liveDot} />
-              <ThemedText type="small" style={{ color: theme.live, fontWeight: '700' }}>
-                LIVE NOW
-              </ThemedText>
-            </>
+    <Pressable onPress={onOpenPlayer} style={({ pressed }) => [styles.rowPressable, pressed && styles.pressed]}>
+      <ThemedView variant="elevated" style={styles.streamRow}>
+        <View style={styles.thumbWrap}>
+          {stream.thumbnail ? (
+            <Image source={{ uri: stream.thumbnail }} style={styles.thumb} contentFit="cover" />
           ) : (
-            <ThemedText type="small" themeColor="textSecondary">
-              {soon
-                ? `Starts ${soon}`
-                : stream.scheduled_at
-                  ? new Date(stream.scheduled_at).toLocaleString()
-                  : (stream.source_name ?? 'Scheduled')}
-            </ThemedText>
+            <View style={[styles.thumbPlaceholder, { backgroundColor: theme.accentLight }]}>
+              <Ionicons name="tv-outline" size={24} color={theme.accent} />
+            </View>
           )}
+          <View style={styles.playOverlay}>
+            <Ionicons name="play" size={16} color="#ffffff" />
+          </View>
         </View>
-      </View>
+
+        <View style={styles.rowBody}>
+          <View style={styles.badgeRow}>
+            {stream.is_live ? (
+              <View style={[styles.livePill, { backgroundColor: theme.live }]}>
+                <View style={styles.pulseDot} />
+                <ThemedText type="badge" style={{ color: '#ffffff' }}>
+                  LIVE
+                </ThemedText>
+              </View>
+            ) : (
+              <View style={[styles.scheduledPill, { backgroundColor: theme.goldSoft }]}>
+                <Ionicons name="calendar-outline" size={10} color={theme.gold} />
+                <ThemedText type="badge" themeColor="gold">
+                  UPCOMING
+                </ThemedText>
+              </View>
+            )}
+            {stream.source_name ? (
+              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                {stream.source_name}
+              </ThemedText>
+            ) : null}
+          </View>
+
+          <ThemedText type="subtitle" numberOfLines={2} style={styles.streamTitle}>
+            {stream.title}
+          </ThemedText>
+
+          {!stream.is_live && stream.scheduled_at ? (
+            <ThemedText type="small" themeColor="textSecondary">
+              {new Date(stream.scheduled_at).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </ThemedText>
+          ) : null}
+        </View>
+      </ThemedView>
     </Pressable>
   );
 }
 
-function ChannelRow({ channel, onPress }: { channel: ChannelDTO; onPress: () => void }) {
+function ChannelRow({ channel, onOpenChannel }: { channel: ChannelDTO; onOpenChannel: () => void }) {
   const theme = useTheme();
+
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.row,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
-        pressed && styles.pressed,
-      ]}>
-      <View style={[styles.avatar, { backgroundColor: theme.backgroundSelected }]}>
+    <Pressable onPress={onOpenChannel} style={({ pressed }) => [styles.rowPressable, pressed && styles.pressed]}>
+      <ThemedView variant="elevated" style={styles.channelRow}>
         {channel.thumbnail ? (
-          <Image source={{ uri: channel.thumbnail }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <Image source={{ uri: channel.thumbnail }} style={styles.thumbRound} contentFit="cover" />
         ) : (
-          <ThemedText themeColor="gold" style={styles.avatarGlyph}>
-            ▶
-          </ThemedText>
+          <View style={[styles.thumbRoundPlaceholder, { backgroundColor: theme.accentLight }]}>
+            <Ionicons name="radio" size={20} color={theme.accent} />
+          </View>
         )}
-      </View>
-      <View style={styles.rowBody}>
-        <ThemedText style={styles.rowTitle} numberOfLines={1}>
-          {channel.name}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {channel.videos_count} videos
-        </ThemedText>
-      </View>
-      <ThemedText themeColor="textSecondary" style={styles.chevron}>
-        ›
-      </ThemedText>
+        <View style={styles.rowBody}>
+          <ThemedText type="subtitle" numberOfLines={1} style={styles.channelName}>
+            {channel.name}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {channel.videos_count} published videos
+          </ThemedText>
+        </View>
+        <View style={[styles.watchActionPill, { backgroundColor: theme.accentLight }]}>
+          <ThemedText type="smallBold" themeColor="accent">
+            Watch
+          </ThemedText>
+          <Ionicons name="chevron-forward" size={14} color={theme.accent} />
+        </View>
+      </ThemedView>
     </Pressable>
   );
 }
+
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: 'transparent' },
-  content: {
-    paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.six,
-    alignSelf: 'center',
+  flex: {
+    flex: 1,
+  },
+  maxContainer: {
+    flex: 1,
     width: '100%',
     maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+  },
+  header: {
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.three,
+    paddingBottom: Spacing.two,
+    gap: Spacing.half,
   },
   title: {
-    fontFamily: Fonts.serif,
-    fontWeight: '700',
-    fontSize: 26,
-    lineHeight: 32,
-    color: '#f3f6fa',
+    marginTop: Spacing.half,
   },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sectionHeader: { letterSpacing: 1, paddingTop: Spacing.four, paddingBottom: Spacing.two },
-  row: {
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.oneHalf,
+    borderRadius: Radius.full,
     borderWidth: 1,
-    borderRadius: 12,
-    padding: Spacing.two + 2,
-    marginBottom: Spacing.two + 2,
+    marginTop: Spacing.two,
   },
-  rowMuted: { opacity: 0.72 },
-  thumb: {
-    width: 92,
-    height: 54,
-    borderRadius: 8,
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    padding: 0,
+  },
+  sectionHeaderWrap: {
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
+    paddingBottom: Spacing.two,
+  },
+  rowPressable: {
+    marginHorizontal: Spacing.four,
+    marginBottom: Spacing.three,
+  },
+  streamRow: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    alignItems: 'center',
+  },
+  channelRow: {
+    flexDirection: 'row',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    alignItems: 'center',
+  },
+  rowBody: {
+    flex: 1,
+    gap: Spacing.half,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 2,
+    borderRadius: Radius.full,
+  },
+  pulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#ffffff',
+  },
+  scheduledPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 2,
+    borderRadius: Radius.full,
+  },
+  streamTitle: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  channelName: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  thumbWrap: {
+    position: 'relative',
+    width: 88,
+    height: 60,
+    borderRadius: Radius.medium,
     overflow: 'hidden',
+  },
+  thumb: {
+    width: 88,
+    height: 60,
+    borderRadius: Radius.medium,
+  },
+  thumbPlaceholder: {
+    width: 88,
+    height: 60,
+    borderRadius: Radius.medium,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatar: {
+  playOverlay: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -14,
+    marginLeft: -14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thumbRound: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    overflow: 'hidden',
+  },
+  thumbRoundPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarGlyph: { fontSize: 18 },
-  playPill: {
-    position: 'absolute',
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: 'rgba(201,162,39,0.95)',
+  watchActionPill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: Spacing.half,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.full,
   },
-  playGlyph: { color: '#0d1f3c', fontSize: 10, marginLeft: 2 },
-  rowBody: { flex: 1, minWidth: 0, gap: 3 },
-  rowTitle: { fontSize: 14, fontWeight: '600', lineHeight: 18, color: '#f3f6fa' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one + 2 },
-  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#e5484d' },
-  chevron: { fontSize: 20 },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
+  pressed: {
+    opacity: 0.85,
+  },
 });
+
