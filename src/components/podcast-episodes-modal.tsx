@@ -40,7 +40,7 @@ export function PodcastEpisodesModal({ show, onClose }: PodcastEpisodesModalProp
       showName: show.name,
       audioUrl: ep.audio_url || ep.embed_url || '',
       artwork: ep.thumbnail || show.thumbnail || undefined,
-      duration: ep.duration || undefined,
+      duration: ep.duration ? String(ep.duration) : undefined,
     });
   };
 
