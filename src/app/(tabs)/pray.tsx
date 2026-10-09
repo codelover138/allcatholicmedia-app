@@ -132,11 +132,11 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 14, padding: Spacing.three, gap: Spacing.two + 2 },
   cardCross: { fontSize: 22 },
   kicker: { fontSize: 11, letterSpacing: 0.7, opacity: 0.8 },
-  cardTitle: { fontFamily: Fonts.serif, fontWeight: '700', fontSize: 18, color: '#f3f6fa' },
+  cardTitle: { fontFamily: Fonts.serif, fontWeight: '700', fontSize: 18 },
   cardBody: { lineHeight: 19 },
   link: { alignSelf: 'flex-start' },
   prayerText: { borderLeftWidth: 2, paddingLeft: Spacing.three, gap: Spacing.one + 2 },
-  prayerLine: { lineHeight: 20, color: '#e7ecf3' },
+  prayerLine: { lineHeight: 20 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   rowGlyph: { fontSize: 18, width: 24, textAlign: 'center' },
   rowCopy: { flex: 1, minWidth: 0, gap: 1 },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: '#f3f6fa' },
+  rowTitle: { fontSize: 15, fontWeight: '600' },
   rowChevron: { fontSize: 20 },
   pressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
 });

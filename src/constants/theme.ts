@@ -1,6 +1,7 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Classic Sacred Liturgical Theme for All Catholic Media.
+ * Deep Garnet Crimson (#7A0C1E), Radiant Liturgical Gold (#D4AF37),
+ * Sanctuary Dark Blue (#0A0F1D) and Sacred Cream Text (#F7F4EF).
  */
 
 import '@/global.css';
@@ -9,44 +10,52 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#1c1613',
-    textSecondary: '#6e5f54',
-    textMuted: '#9e8e82',
-    background: '#f8f6f2',
-    backgroundElement: '#ffffff',
-    backgroundSelected: '#f2e8d8',
-    backgroundElevated: '#ffffff',
-    border: '#e7dfd4',
-    borderLight: '#f3ede4',
-    accent: '#801429',
-    accentSoft: '#ba3048',
-    accentLight: '#fdf0f2',
-    gold: '#b8860b',
-    goldSoft: '#f9f4e8',
-    live: '#d92534',
-    liveSoft: 'rgba(217, 37, 52, 0.1)',
-    cardShadow: 'rgba(28, 22, 19, 0.05)',
-    glass: 'rgba(255, 255, 255, 0.85)',
+    text: '#1F1916',
+    textSecondary: '#665A52',
+    textMuted: '#968A80',
+    background: '#F7F3EB',
+    backgroundElement: '#FFFFFF',
+    backgroundSelected: '#EFE7D8',
+    backgroundElevated: '#FFFFFF',
+    border: '#E2D7C5',
+    borderLight: '#F0E8DC',
+    accent: '#7A0C1E', // Liturgical Garnet
+    accentSoft: '#A61B32',
+    accentLight: '#FCECEF',
+    gold: '#B8860B', // Metallic Gold
+    goldSoft: '#FAF3DC',
+    goldPressed: '#8A6405',
+    danger: '#B31B27',
+    success: '#1B7A38',
+    blue: '#1A5A96',
+    live: '#C91C28',
+    liveSoft: 'rgba(201, 28, 40, 0.1)',
+    cardShadow: 'rgba(31, 25, 22, 0.08)',
+    glass: 'rgba(255, 255, 255, 0.92)',
   },
   dark: {
-    text: '#f5eee6',
-    textSecondary: '#a8988b',
-    textMuted: '#786a5e',
-    background: '#120e0c',
-    backgroundElement: '#1c1613',
-    backgroundSelected: '#32261e',
-    backgroundElevated: '#251e19',
-    border: '#2e2520',
-    borderLight: '#241c17',
-    accent: '#e85d75',
-    accentSoft: '#c74259',
-    accentLight: '#2c171b',
-    gold: '#e5b854',
-    goldSoft: '#2a2418',
-    live: '#ff4d5a',
-    liveSoft: 'rgba(255, 77, 90, 0.15)',
-    cardShadow: 'rgba(0, 0, 0, 0.4)',
-    glass: 'rgba(28, 22, 19, 0.85)',
+    text: '#F7F4EF', // Sacred Warm Cream Text
+    textSecondary: '#C4BBAF',
+    textMuted: '#8C8275',
+    background: '#0A0F1D', // Deep Sanctuary Navy
+    backgroundElement: '#141A2E', // Elevated Sanctuary Dark Card
+    backgroundSelected: '#202840',
+    backgroundElevated: '#1A223B',
+    border: '#2A3452',
+    borderLight: '#1F273D',
+    accent: '#A61B32', // Liturgical Crimson Red
+    accentSoft: '#C72A43',
+    accentLight: '#2C060C',
+    gold: '#D4AF37', // Radiant Liturgical Gold Foil
+    goldSoft: '#3D3212',
+    goldPressed: '#F3CF55',
+    danger: '#E5484D',
+    success: '#30A46C',
+    blue: '#3E9BEE',
+    live: '#E5484D',
+    liveSoft: 'rgba(229, 72, 77, 0.18)',
+    cardShadow: 'rgba(0, 0, 0, 0.5)',
+    glass: 'rgba(14, 20, 36, 0.9)',
   },
 } as const;
 
@@ -95,4 +104,3 @@ export const Radius = {
 
 export const BottomTabInset = Platform.select({ ios: 60, android: 80, web: 76 }) ?? 60;
 export const MaxContentWidth = 840;
-

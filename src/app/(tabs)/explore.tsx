@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
   },
   searchIcon: { fontSize: 18 },
-  searchInput: { flex: 1, paddingVertical: Spacing.three - 2, fontSize: 14 },
+  searchInput: { flex: 1, paddingVertical: Spacing.three - 2, fontSize: 14, color: '#f3f6fa' },
   searchClear: { fontSize: 14, paddingHorizontal: Spacing.one },
 
   chips: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   playGlyph: { color: '#0d1f3c', fontSize: 10, marginLeft: 2 },
   copy: { flex: 1, minWidth: 0, gap: 2 },
   rowLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.6 },
-  rowTitle: { fontSize: 14, fontWeight: '600', lineHeight: 18, color: '#f3f6fa' },
+  rowTitle: { fontSize: 14, fontWeight: '600', lineHeight: 18 },
   rowMeta: { fontSize: 11.5, lineHeight: 15 },
   bookmark: { padding: Spacing.one },
   bookmarkGlyph: { fontSize: 18, lineHeight: 20 },

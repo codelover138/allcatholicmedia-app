@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -291,15 +292,17 @@ function LiveBanner({ title }: { title: string }) {
       onPress={() => router.push('/live')}
       style={({ pressed }) => [
         styles.liveBanner,
-        { borderColor: theme.border },
+        { borderColor: theme.live, backgroundColor: theme.backgroundElement },
         pressed && styles.pressed,
       ]}>
-      <View style={styles.liveDot} />
-      <ThemedText style={styles.liveLabel}>LIVE</ThemedText>
-      <ThemedText type="small" style={styles.liveTitle} numberOfLines={1}>
+      <View style={styles.liveBadgeGroup}>
+        <View style={[styles.liveDot, { backgroundColor: theme.live }]} />
+        <ThemedText style={[styles.liveLabel, { color: theme.live }]}>LIVE</ThemedText>
+      </View>
+      <ThemedText type="smallBold" style={styles.liveTitle} numberOfLines={1}>
         {title}
       </ThemedText>
-      <ThemedText style={styles.liveArrow}>›</ThemedText>
+      <Ionicons name="chevron-forward" size={16} color={theme.gold} />
     </Pressable>
   );
 }
@@ -316,10 +319,15 @@ function FounderCard({
     <View
       style={[
         styles.founderCard,
-        { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+        {
+          backgroundColor: theme.backgroundElement,
+          borderColor: theme.border,
+          borderLeftColor: theme.gold,
+          borderLeftWidth: 3.5,
+        },
       ]}>
       <View style={styles.founderHead}>
-        <View style={[styles.founderAvatar, { borderColor: theme.gold, backgroundColor: theme.backgroundSelected }]}>
+        <View style={[styles.founderAvatar, { borderColor: theme.gold, backgroundColor: theme.goldSoft }]}>
           {avatar ? (
             <Image source={{ uri: avatar }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
           ) : (
@@ -336,7 +344,7 @@ function FounderCard({
         </View>
       </View>
 
-      <View style={[styles.founderQuote, { borderLeftColor: theme.gold }]}>
+      <View style={[styles.founderQuote, { borderLeftColor: theme.goldSoft }]}>
         <ThemedText style={styles.founderQuoteText}>“{quote.text}”</ThemedText>
         <ThemedText themeColor="textSecondary" style={styles.founderQuoteSource}>
           — {quote.source.toUpperCase()}
@@ -378,12 +386,12 @@ function ContinueCard({
             transition={200}
           />
         ) : null}
-        <View style={styles.playButton}>
-          <ThemedText style={styles.playGlyph}>▶</ThemedText>
+        <View style={[styles.playButton, { backgroundColor: theme.gold }]}>
+          <Ionicons name="play" size={20} color="#ffffff" style={{ marginLeft: 2 }} />
         </View>
-        {/* Progress fill is cosmetic until real playback state exists (no auth yet). */}
+        {/* Progress fill cosmetic track */}
         <View style={styles.progressTrack}>
-          <View style={styles.progressFill} />
+          <View style={[styles.progressFill, { backgroundColor: theme.gold }]} />
         </View>
       </View>
       <View style={styles.continueBody}>
@@ -439,8 +447,8 @@ function PreviewCard({
           </ThemedText>
         )}
         {isVideo ? (
-          <View style={styles.previewPlay}>
-            <ThemedText style={styles.previewPlayGlyph}>▶</ThemedText>
+          <View style={[styles.previewPlay, { backgroundColor: theme.gold }]}>
+            <Ionicons name="play" size={14} color="#ffffff" style={{ marginLeft: 2 }} />
           </View>
         ) : null}
       </View>
@@ -502,8 +510,8 @@ function LatestRow({
           </ThemedText>
         )}
         {isVideo ? (
-          <View style={styles.latestPlay}>
-            <ThemedText style={styles.latestPlayGlyph}>▶</ThemedText>
+          <View style={[styles.latestPlay, { backgroundColor: theme.gold }]}>
+            <Ionicons name="play" size={10} color="#ffffff" style={{ marginLeft: 1 }} />
           </View>
         ) : null}
       </View>
@@ -518,180 +526,174 @@ function LatestRow({
           {meta}
         </ThemedText>
       </View>
-      <ThemedText themeColor="textSecondary" style={styles.latestChevron}>
-        ›
-      </ThemedText>
+      <Ionicons name="chevron-forward" size={18} color={theme.textMuted} />
     </Pressable>
   );
 }
 
-// Lifts cards off the deep-navy page background the way the design's 1px border
-// + soft shadow does on the light theme.
 const CARD_SHADOW = {
-  shadowColor: '#00030b',
-  shadowOpacity: 0.5,
-  shadowRadius: 12,
-  shadowOffset: { width: 0, height: 4 },
-  elevation: 4,
+  shadowColor: 'rgba(0, 0, 0, 0.08)',
+  shadowOpacity: 0.6,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 3 },
+  elevation: 3,
 } as const;
 
 const styles = StyleSheet.create({
   scroll: { flexGrow: 1 },
   transparent: { flex: 1, backgroundColor: 'transparent' },
   safe: { paddingBottom: BottomTabInset + Spacing.four },
-  content: { paddingHorizontal: Spacing.three, paddingTop: Spacing.three, gap: Spacing.three },
+  content: { paddingHorizontal: Spacing.three, paddingTop: Spacing.two, gap: Spacing.two + 2 },
 
   liveBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    backgroundColor: '#060e1d',
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two + 2,
+    paddingVertical: Spacing.two,
     ...CARD_SHADOW,
   },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#e5484d' },
-  liveLabel: { color: '#ffffff', fontSize: 12, fontWeight: '800', letterSpacing: 1 },
-  liveTitle: { flex: 1, color: '#e7ecf3' },
-  liveArrow: { color: '#c9a227', fontSize: 20, lineHeight: 22 },
+  liveBadgeGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  liveDot: { width: 7, height: 7, borderRadius: 4 },
+  liveLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.8 },
+  liveTitle: { flex: 1, fontSize: 13 },
 
-  greeting: { fontFamily: Fonts.serif, fontWeight: '700', fontSize: 26, lineHeight: 32, color: '#f3f6fa' },
-  intro: { marginTop: Spacing.half },
+  greeting: { fontFamily: Fonts.serif, fontWeight: '700', fontSize: 24, lineHeight: 28, color: '#f3f6fa' },
+  intro: { marginTop: 2, color: 'rgba(243, 246, 250, 0.75)' },
 
   founderCard: {
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     padding: Spacing.three,
-    gap: Spacing.three,
+    gap: Spacing.two + 2,
     ...CARD_SHADOW,
   },
-  founderHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  founderHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two + 2 },
   founderAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     borderWidth: 1.5,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  founderAvatarGlyph: { fontSize: 22 },
-  founderHeadText: { flex: 1, minWidth: 0, gap: 2 },
+  founderAvatarGlyph: { fontSize: 20 },
+  founderHeadText: { flex: 1, minWidth: 0, gap: 1 },
   founderName: {
     fontFamily: Fonts.serif,
     fontWeight: '700',
-    fontSize: 16,
-    lineHeight: 20,
-    color: '#f3f6fa',
+    fontSize: 15,
+    lineHeight: 18,
   },
-  founderRole: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.8 },
-  founderQuote: { borderLeftWidth: 2, paddingLeft: Spacing.three, gap: Spacing.one },
+  founderRole: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.8 },
+  founderQuote: { borderLeftWidth: 2, paddingLeft: Spacing.two + 2, gap: 2 },
   founderQuoteText: {
     fontFamily: Fonts.serif,
     fontStyle: 'italic',
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#e7ecf3',
+    fontSize: 14,
+    lineHeight: 20,
   },
-  founderQuoteSource: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.8 },
+  founderQuoteSource: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
 
-  continueCard: { borderRadius: 16, borderWidth: 1, overflow: 'hidden', ...CARD_SHADOW },
-  thumb: { height: 140, alignItems: 'center', justifyContent: 'center' },
+  continueCard: { borderRadius: 14, borderWidth: 1, overflow: 'hidden', ...CARD_SHADOW },
+  thumb: { height: 130, alignItems: 'center', justifyContent: 'center' },
   playButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: 'rgba(201,162,39,0.95)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  playGlyph: { color: '#0d1f3c', fontSize: 18, marginLeft: 3 },
   progressTrack: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
     height: 3,
-    backgroundColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  progressFill: { width: '64%', height: 3, backgroundColor: '#c9a227' },
-  continueBody: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.two + 2, gap: 3 },
-  typeLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6 },
-  continueTitle: { fontSize: 15, lineHeight: 20, fontWeight: '700', color: '#f3f6fa' },
-  metaText: { fontSize: 12, lineHeight: 16 },
+  progressFill: { width: '64%', height: 3 },
+  continueBody: { paddingHorizontal: Spacing.three, paddingVertical: Spacing.two, gap: 2 },
+  typeLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.6 },
+  continueTitle: { fontSize: 14.5, lineHeight: 19, fontWeight: '700' },
+  metaText: { fontSize: 11.5, lineHeight: 15 },
 
-  dualCards: { flexDirection: 'row', gap: Spacing.two + 2 },
+  dualCards: { flexDirection: 'row', gap: Spacing.two },
   previewCard: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     overflow: 'hidden',
     ...CARD_SHADOW,
   },
-  previewThumb: { height: 92, alignItems: 'center', justifyContent: 'center' },
-  previewGlyph: { fontSize: 26, lineHeight: 30 },
+  previewThumb: { height: 88, alignItems: 'center', justifyContent: 'center' },
+  previewGlyph: { fontSize: 24, lineHeight: 28 },
   previewPlay: {
     position: 'absolute',
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(201,162,39,0.95)',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  previewPlayGlyph: { color: '#0d1f3c', fontSize: 13, marginLeft: 2 },
   previewBody: { paddingHorizontal: Spacing.two + 2, paddingVertical: Spacing.two, gap: 2 },
   previewTitle: {
     fontFamily: Fonts.serif,
     fontWeight: '700',
-    fontSize: 13.5,
-    lineHeight: 18,
-    color: '#f3f6fa',
+    fontSize: 13,
+    lineHeight: 17,
   },
 
   latestHeading: {
     fontFamily: Fonts.serif,
     fontWeight: '700',
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 17,
+    lineHeight: 22,
     color: '#f3f6fa',
-    marginBottom: Spacing.two + 2,
+    marginBottom: Spacing.one,
   },
-  latestList: { gap: Spacing.two + 2 },
+  latestList: { gap: Spacing.two },
   latestRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
-    padding: Spacing.two + 2,
+    gap: Spacing.two + 2,
+    padding: Spacing.two,
     borderRadius: 12,
     borderWidth: 1,
     ...CARD_SHADOW,
   },
   latestThumb: {
-    width: 76,
-    height: 56,
-    borderRadius: 9,
+    width: 70,
+    height: 52,
+    borderRadius: 8,
     borderWidth: 1,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  latestThumbGlyph: { fontSize: 18, lineHeight: 22 },
+  latestThumbGlyph: { fontSize: 16, lineHeight: 20 },
   latestPlay: {
     position: 'absolute',
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: 'rgba(201,162,39,0.95)',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  latestPlayGlyph: { color: '#0d1f3c', fontSize: 10, marginLeft: 2 },
   latestCopy: { flex: 1, minWidth: 0, gap: 1 },
-  latestTitle: { fontSize: 14, fontWeight: '600', lineHeight: 18, color: '#f3f6fa' },
-  latestChevron: { fontSize: 20, lineHeight: 22 },
+  latestTitle: { fontSize: 13.5, fontWeight: '600', lineHeight: 17 },
 
   pressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
 });

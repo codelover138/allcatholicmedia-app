@@ -21,29 +21,29 @@ export default function AppTabs() {
     <Tabs style={{ flex: 1 }}>
       <TabList asChild style={styles.topTabList}>
         <CustomTabList>
-          <TabTrigger name="home" href="/" asChild>
+          <TabTrigger name="index" href="/" asChild>
             <TabButton icon="home-outline" activeIcon="home">
               Home
             </TabButton>
           </TabTrigger>
-          <TabTrigger name="live" href="/live" asChild>
-            <TabButton icon="radio-outline" activeIcon="radio">
-              Live
+          <TabTrigger name="explore" href="/explore" asChild>
+            <TabButton icon="compass-outline" activeIcon="compass">
+              Explore
             </TabButton>
           </TabTrigger>
-          <TabTrigger name="listen" href="/listen" asChild>
-            <TabButton icon="headset-outline" activeIcon="headset">
-              Listen
+          <TabTrigger name="pray" href="/pray" asChild>
+            <TabButton icon="hand-left-outline" activeIcon="hand-left">
+              Pray
             </TabButton>
           </TabTrigger>
-          <TabTrigger name="read" href="/read" asChild>
-            <TabButton icon="book-outline" activeIcon="book">
-              Read
+          <TabTrigger name="community" href="/community" asChild>
+            <TabButton icon="people-outline" activeIcon="people">
+              Community
             </TabButton>
           </TabTrigger>
-          <TabTrigger name="more" href="/more" asChild>
-            <TabButton icon="grid-outline" activeIcon="grid">
-              More
+          <TabTrigger name="profile" href="/profile" asChild>
+            <TabButton icon="person-outline" activeIcon="person">
+              Profile
             </TabButton>
           </TabTrigger>
         </CustomTabList>
@@ -114,7 +114,7 @@ export function CustomTabList(props: TabListProps) {
 
         <View style={styles.triggersGroup}>{props.children}</View>
 
-        <Link href="/more" asChild>
+        <Link href="/donate" asChild>
           <Pressable
             style={({ pressed }) => [
               styles.donateButton,
