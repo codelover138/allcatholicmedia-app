@@ -119,7 +119,7 @@ export function AnimatedIcon() {
 
       <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
       <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
-        <Image style={styles.image} source={require('@/assets/images/splash-icon.png')} />
+        <Image style={styles.image} source={require('@/assets/images/splash-icon.png')} resizeMode="contain" />
       </Animated.View>
     </View>
   );
@@ -138,13 +138,13 @@ const styles = StyleSheet.create({
   iconContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    width: 128,
+    width: 140,
     height: 128,
     zIndex: 100,
   },
   image: {
-    width: 90,
-    height: 90,
+    width: 116,
+    height: 44,
   },
   background: {
     borderRadius: 40,

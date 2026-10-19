@@ -266,7 +266,7 @@ export type VideosResponse = {
 export function slugFromUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   const seg = url.split('?')[0].split('#')[0].replace(/\/+$/, '').split('/').pop();
-  return seg || null;
+  return seg ? seg.replace(/\.html?$/i, '') : null;
 }
 
 export type DonateConfigResponse = {
