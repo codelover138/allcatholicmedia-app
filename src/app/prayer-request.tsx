@@ -18,7 +18,7 @@ const VISIBILITY: { key: PrayerVisibility; label: string; blurb: string }[] = [
   {
     key: 'prayer_team',
     label: 'The prayer team',
-    blurb: "Fr. Morson's prayer team prays for this. It is never shown publicly.",
+    blurb: "Fr. Morsin's prayer team prays for this. It is never shown publicly.",
   },
   {
     key: 'only_me',

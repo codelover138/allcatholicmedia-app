@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrayerRequestModal } from '@/components/prayer-request-modal';
 import { EmptyState, ErrorState, LoadingState } from '@/components/query-state';
+import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -64,8 +65,9 @@ export default function MoreScreen() {
 
   return (
     <>
-      <ScrollView style={[styles.flex, { backgroundColor: theme.background }]} contentContainerStyle={styles.scrollContent}>
-        <SafeAreaView edges={['top']} style={styles.safeContainer}>
+      <ScreenBackground>
+        <ScrollView style={[styles.flex, { backgroundColor: 'transparent' }]} contentContainerStyle={styles.scrollContent}>
+          <SafeAreaView edges={['top']} style={styles.safeContainer}>
           <View style={styles.maxContainer}>
             <View style={styles.header}>
               <ThemedText type="sectionHeader" themeColor="gold">
@@ -264,6 +266,7 @@ export default function MoreScreen() {
           </View>
         </SafeAreaView>
       </ScrollView>
+      </ScreenBackground>
 
       <PrayerRequestModal visible={prayerModalOpen} onClose={() => setPrayerModalOpen(false)} />
     </>

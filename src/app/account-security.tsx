@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -6,11 +7,19 @@ import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 import { Button, FormError, FormNotice, PasswordField } from '@/components/form';
 import { FormScreen } from '@/components/form-screen';
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { accountApi, authApi, type AuthSession } from '@/lib/auth-api';
 import { useAuth } from '@/lib/auth-store';
-import { biometricAvailable, biometricLabel, promptBiometric } from '@/lib/biometrics';
+import {
+  biometricAvailable,
+  biometricKind,
+  biometricLabel,
+  clearBiometricCredentials,
+  hasBiometricCredentials,
+  promptBiometric,
+  saveBiometricCredentials,
+} from '@/lib/biometrics';
 import { formatShortDate } from '@/lib/format';
 import { useFormErrors, validators } from '@/lib/form-errors';
 
@@ -19,21 +28,33 @@ export default function AccountSecurityScreen() {
   const theme = useTheme();
   const qc = useQueryClient();
   const signOut = useAuth((s) => s.signOut);
+  const token = useAuth((s) => s.token);
+  const member = useAuth((s) => s.member);
 
-  // ── App lock (biometric) ──
+  // ── App lock & Face ID (biometric) ──
   const biometricEnabled = useAuth((s) => s.biometricEnabled);
   const setBiometricEnabled = useAuth((s) => s.setBiometricEnabled);
   const [bioSupported, setBioSupported] = useState(false);
-  const [bioName, setBioName] = useState('biometrics');
+  const [bioName, setBioName] = useState('Face ID');
+  const [bioKind, setBioKind] = useState<'face' | 'fingerprint' | 'iris' | 'biometric'>('face');
+  const [hasCreds, setHasCreds] = useState(false);
   const [bioBusy, setBioBusy] = useState(false);
+  const [testSuccess, setTestSuccess] = useState(false);
 
   useEffect(() => {
     let alive = true;
     void (async () => {
-      const [ok, name] = await Promise.all([biometricAvailable(), biometricLabel()]);
+      const [ok, name, kind, credsExist] = await Promise.all([
+        biometricAvailable(),
+        biometricLabel(),
+        biometricKind(),
+        hasBiometricCredentials(),
+      ]);
       if (!alive) return;
       setBioSupported(ok);
       setBioName(name);
+      setBioKind(kind);
+      setHasCreds(credsExist);
     })();
     return () => {
       alive = false;
@@ -47,17 +68,69 @@ export default function AccountSecurityScreen() {
       if (nextValue) {
         if (!bioSupported) {
           Alert.alert(
-            'No biometrics set up',
-            `Add ${bioName === 'biometrics' ? 'a biometric unlock' : bioName} in your device settings first.`,
+            `No ${bioName} set up`,
+            `Add ${bioName} in your device settings first.`
           );
           return;
         }
-        const ok = await promptBiometric('Confirm to turn on app lock');
+        const ok = await promptBiometric(`Confirm to turn on ${bioName} app lock`);
         if (!ok) return;
+
+        // Also save biometric credentials if not already saved
+        if (token && member) {
+          await saveBiometricCredentials({
+            token,
+            member,
+            email: member.email,
+          });
+          setHasCreds(true);
+        }
       }
       await setBiometricEnabled(nextValue);
     } finally {
       setBioBusy(false);
+    }
+  };
+
+  const toggleQuickSignIn = async (nextValue: boolean) => {
+    if (bioBusy) return;
+    setBioBusy(true);
+    try {
+      if (nextValue) {
+        if (!bioSupported) {
+          Alert.alert(`No ${bioName} set up`, `Configure ${bioName} in your device settings first.`);
+          return;
+        }
+        const ok = await promptBiometric(`Verify ${bioName} to enable one-tap sign-in`);
+        if (!ok) return;
+
+        if (token && member) {
+          await saveBiometricCredentials({
+            token,
+            member,
+            email: member.email,
+          });
+          setHasCreds(true);
+          Alert.alert('Enabled!', `${bioName} sign-in is now active on this device.`);
+        }
+      } else {
+        await clearBiometricCredentials();
+        setHasCreds(false);
+        Alert.alert('Removed', `${bioName} credentials removed from this device.`);
+      }
+    } finally {
+      setBioBusy(false);
+    }
+  };
+
+  const testBiometrics = async () => {
+    setTestSuccess(false);
+    const ok = await promptBiometric(`Test ${bioName} verification`);
+    if (ok) {
+      setTestSuccess(true);
+      Alert.alert('Verification Successful', `${bioName} is functioning properly and ready for secure access.`);
+    } else {
+      Alert.alert('Verification Cancelled / Failed', `Could not verify ${bioName}. Try again.`);
     }
   };
 
@@ -200,20 +273,41 @@ export default function AccountSecurityScreen() {
         <Button label="UPDATE PASSWORD" onPress={changePassword} loading={savingPw} />
       </View>
 
-      {/* App lock */}
+      {/* Biometric Security & Face Login */}
       <View style={styles.section}>
-        <ThemedText type="smallBold" style={styles.sectionTitle}>
-          APP LOCK
-        </ThemedText>
-        <View style={[styles.sessionRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-          <View style={styles.sessionCopy}>
-            <ThemedText style={styles.sessionName}>
-              Require {bioName === 'biometrics' ? 'unlock' : bioName} to open the app
+        <View style={styles.sectionHeaderRow}>
+          <Ionicons
+            name={bioKind === 'face' ? 'scan-outline' : 'finger-print-outline'}
+            size={16}
+            color={theme.gold}
+          />
+          <ThemedText type="smallBold" style={styles.sectionTitle}>
+            BIOMETRIC SECURITY & FACE LOGIN
+          </ThemedText>
+        </View>
+
+        {testSuccess ? (
+          <View style={[styles.testSuccessBanner, { backgroundColor: theme.goldSoft, borderColor: theme.gold }]}>
+            <Ionicons name="checkmark-circle" size={16} color={theme.gold} />
+            <ThemedText type="smallBold" themeColor="gold">
+              {bioName} verified successfully! Your device is ready.
             </ThemedText>
+          </View>
+        ) : null}
+
+        {/* 1. App Lock Switch */}
+        <View style={[styles.bioSettingCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+          <View style={styles.sessionCopy}>
+            <View style={styles.bioTitleRow}>
+              <Ionicons name="lock-closed-outline" size={18} color={theme.gold} />
+              <ThemedText style={styles.sessionName}>
+                Require {bioName} to open app
+              </ThemedText>
+            </View>
             <ThemedText type="small" themeColor="textSecondary">
               {bioSupported
-                ? 'Locks after the app goes to the background.'
-                : `Set up ${bioName === 'biometrics' ? 'a biometric unlock' : bioName} on this device to use this.`}
+                ? 'Secures your private prayers and content whenever the app returns from background.'
+                : `Set up ${bioName} in your device settings first to enable app protection.`}
             </ThemedText>
           </View>
           <Switch
@@ -224,6 +318,54 @@ export default function AccountSecurityScreen() {
             thumbColor="#f3f6fa"
           />
         </View>
+
+        {/* 2. One-Tap Biometric Sign-In Switch */}
+        <View style={[styles.bioSettingCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+          <View style={styles.sessionCopy}>
+            <View style={styles.bioTitleRow}>
+              <Ionicons
+                name={bioKind === 'face' ? 'scan-outline' : 'finger-print-outline'}
+                size={18}
+                color={theme.gold}
+              />
+              <ThemedText style={styles.sessionName}>
+                One-tap {bioName} sign-in
+              </ThemedText>
+            </View>
+            <ThemedText type="small" themeColor="textSecondary">
+              {hasCreds
+                ? `Active on this device for ${member?.email || 'your account'}. You can sign in with one tap.`
+                : `Save your session securely to sign in with ${bioName} next time without entering your password.`}
+            </ThemedText>
+          </View>
+          <Switch
+            value={hasCreds}
+            onValueChange={toggleQuickSignIn}
+            disabled={bioBusy || !bioSupported}
+            trackColor={{ true: theme.gold, false: theme.border }}
+            thumbColor="#f3f6fa"
+          />
+        </View>
+
+        {/* 3. Test Biometric Verification Button */}
+        {bioSupported ? (
+          <Pressable
+            onPress={testBiometrics}
+            style={({ pressed }) => [
+              styles.testBioBtn,
+              { borderColor: theme.gold, backgroundColor: theme.backgroundElement },
+              pressed && { backgroundColor: theme.goldSoft },
+            ]}>
+            <Ionicons
+              name={bioKind === 'face' ? 'scan-outline' : 'finger-print-outline'}
+              size={18}
+              color={theme.gold}
+            />
+            <ThemedText type="smallBold" themeColor="gold">
+              TEST {bioName.toUpperCase()} VERIFICATION
+            </ThemedText>
+          </Pressable>
+        ) : null}
       </View>
 
       {/* Sessions */}
@@ -294,4 +436,42 @@ const styles = StyleSheet.create({
   sessionCopy: { flex: 1, minWidth: 0, gap: 1 },
   sessionName: { fontSize: 14, fontWeight: '600', color: '#f3f6fa' },
   dangerZone: { borderWidth: 1, borderRadius: 12, padding: Spacing.three },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.oneHalf,
+  },
+  testSuccessBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    padding: Spacing.two + 2,
+    borderRadius: Radius.medium,
+    borderWidth: 1,
+  },
+  bioSettingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    borderWidth: 1,
+    borderRadius: Radius.large,
+    padding: Spacing.three,
+  },
+  bioTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.oneHalf,
+    marginBottom: 2,
+  },
+  testBioBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.two + 2,
+    paddingHorizontal: Spacing.four,
+    borderRadius: Radius.full,
+    borderWidth: 1.5,
+    marginTop: Spacing.half,
+  },
 });

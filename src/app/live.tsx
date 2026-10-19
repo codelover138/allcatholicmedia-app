@@ -6,6 +6,7 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/query-state';
+import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
@@ -75,8 +76,9 @@ export default function LiveScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: theme.background }]}>
-      <View style={styles.maxContainer}>
+    <ScreenBackground>
+      <SafeAreaView edges={['top']} style={[styles.flex, { backgroundColor: 'transparent' }]}>
+        <View style={styles.maxContainer}>
         <View style={styles.header}>
           <ThemedText type="sectionHeader" themeColor="gold">
             FR. MORSIN LIVINGSTON BROADCAST NETWORK
@@ -172,8 +174,9 @@ export default function LiveScreen() {
             }}
           />
         ) : null}
-      </View>
-    </SafeAreaView>
+        </View>
+      </SafeAreaView>
+    </ScreenBackground>
   );
 }
 

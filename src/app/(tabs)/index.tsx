@@ -138,7 +138,7 @@ export default function HomeScreen() {
   // The founder's own YouTube channel avatar, reused as his portrait here.
   const founderAvatar = useMemo(
     () =>
-      (channelsQuery.data?.data ?? []).find((c) => /morson/i.test(c.name))?.thumbnail ?? null,
+      (channelsQuery.data?.data ?? []).find((c) => /morsin|morson/i.test(c.name))?.thumbnail ?? null,
     [channelsQuery.data],
   );
 
@@ -337,7 +337,7 @@ function FounderCard({
           )}
         </View>
         <View style={styles.founderHeadText}>
-          <ThemedText style={styles.founderName}>Fr. Morson Livingston</ThemedText>
+          <ThemedText style={styles.founderName}>Fr. Morsin Livingston</ThemedText>
           <ThemedText themeColor="gold" style={styles.founderRole}>
             FOUNDER · ALL CATHOLIC MEDIA
           </ThemedText>

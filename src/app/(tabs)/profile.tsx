@@ -1,7 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
@@ -9,10 +11,19 @@ import { Button } from '@/components/form';
 import { LoadingState } from '@/components/query-state';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
-import { BottomTabInset, Fonts, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, Fonts, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { accountApi } from '@/lib/auth-api';
 import { useAuth } from '@/lib/auth-store';
+import {
+  authenticateWithBiometrics,
+  biometricAvailable,
+  biometricKind,
+  biometricLabel,
+  getBiometricCredentials,
+  type BiometricCredentials,
+  type BiometricKind,
+} from '@/lib/biometrics';
 
 export default function ProfileScreen() {
   const status = useAuth((s) => s.status);
@@ -156,7 +167,13 @@ function Dashboard() {
           <MenuRow glyph="♥" label="Giving history" hint="Receipts and recurring gifts" onPress={() => router.push('/giving')} />
           <MenuRow glyph="⤓" label="Downloads" hint="Episodes saved for offline" onPress={() => router.push('/downloads')} />
           <MenuRow glyph="🔔" label="Prayer reminders" hint="Daily Rosary and Sunday Mass" onPress={() => router.push('/reminders')} />
-          <MenuRow glyph="⚙" label="Account & security" hint="Password, sessions, delete account" onPress={() => router.push('/account-security')} />
+          <MenuRow
+            glyph="⚙"
+            label="Account & security"
+            hint="Password, Face ID, sessions, delete account"
+            badge="Security"
+            onPress={() => router.push('/account-security')}
+          />
           <MenuRow glyph="✉" label="Sunday newsletter" hint="Weekly reflection by email" onPress={() => router.push('/newsletter')} />
           <MenuRow glyph="✎" label="Contact us" hint="Questions, corrections, feedback" onPress={() => router.push('/contact')} last />
         </View>
@@ -191,10 +208,107 @@ function Dashboard() {
 function GuestState() {
   const theme = useTheme();
   const router = useRouter();
+  const signIn = useAuth((s) => s.signIn);
+
+  const [savedBio, setSavedBio] = useState<BiometricCredentials | null>(null);
+  const [bioName, setBioName] = useState('Face ID');
+  const [bioKind, setBioKind] = useState<BiometricKind>('face');
+  const [bioLoading, setBioLoading] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const [creds, name, kind] = await Promise.all([
+        getBiometricCredentials(),
+        biometricLabel(),
+        biometricKind(),
+      ]);
+      if (!alive) return;
+      setSavedBio(creds);
+      setBioName(name);
+      setBioKind(kind);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const handleBioLogin = async () => {
+    if (!savedBio) return;
+    setBioLoading(true);
+    try {
+      const creds = await authenticateWithBiometrics(`Sign in with ${bioName}`);
+      if (!creds) {
+        setBioLoading(false);
+        return;
+      }
+      await signIn(creds.token, creds.member);
+      router.replace('/profile');
+    } catch {
+      Alert.alert('Authentication Failed', `Could not verify with ${bioName}. Please sign in with your email & password.`);
+    } finally {
+      setBioLoading(false);
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.inner}>
         <ThemedText style={styles.pageTitle}>Profile</ThemedText>
+
+        {/* ── Saved Face ID Quick Sign In Card (if enrolled) ── */}
+        {savedBio ? (
+          <View style={[styles.card, styles.guestBioCard, { backgroundColor: theme.backgroundElement, borderColor: theme.gold }]}>
+            <View style={styles.guestBioHeader}>
+              <View style={[styles.guestBioIconWrap, { backgroundColor: theme.goldSoft, borderColor: theme.gold }]}>
+                <Ionicons
+                  name={bioKind === 'face' ? 'scan-outline' : 'finger-print-outline'}
+                  size={24}
+                  color={theme.gold}
+                />
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="sparkles" size={12} color={theme.gold} />
+                  <ThemedText type="badge" themeColor="gold">
+                    SAVED {bioName.toUpperCase()} LOGIN
+                  </ThemedText>
+                </View>
+                <ThemedText style={{ fontWeight: '700', fontSize: 16 }} numberOfLines={1}>
+                  {savedBio.member?.first_name || savedBio.member?.name || 'Faith Member'}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                  {savedBio.email}
+                </ThemedText>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={handleBioLogin}
+              disabled={bioLoading}
+              style={({ pressed }) => [
+                styles.guestBioBtn,
+                { backgroundColor: theme.gold },
+                pressed && { backgroundColor: theme.goldPressed },
+                bioLoading && { opacity: 0.7 },
+              ]}>
+              {bioLoading ? (
+                <ActivityIndicator color="#0d1f3c" size="small" />
+              ) : (
+                <>
+                  <Ionicons
+                    name={bioKind === 'face' ? 'scan-outline' : 'finger-print-outline'}
+                    size={18}
+                    color="#0d1f3c"
+                  />
+                  <ThemedText type="smallBold" style={styles.guestBioBtnText}>
+                    ONE-TAP SIGN IN WITH {bioName.toUpperCase()}
+                  </ThemedText>
+                </>
+              )}
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={[styles.card, styles.welcome, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
           <ThemedText themeColor="gold" style={styles.welcomeCross}>
@@ -256,12 +370,14 @@ function MenuRow({
   glyph,
   label,
   hint,
+  badge,
   onPress,
   last = false,
 }: {
   glyph: string;
   label: string;
   hint?: string;
+  badge?: string;
   onPress: () => void;
   last?: boolean;
 }) {
@@ -285,6 +401,13 @@ function MenuRow({
           </ThemedText>
         ) : null}
       </View>
+      {badge ? (
+        <View style={[styles.menuBadgeWrap, { backgroundColor: theme.goldSoft, borderColor: theme.gold }]}>
+          <ThemedText type="badge" themeColor="gold">
+            {badge}
+          </ThemedText>
+        </View>
+      ) : null}
       <ThemedText themeColor="textSecondary" style={styles.menuChevron}>
         ›
       </ThemedText>
@@ -371,6 +494,47 @@ const styles = StyleSheet.create({
   },
   center: { textAlign: 'center', lineHeight: 20 },
   fullWidth: { width: '100%' },
+
+  guestBioCard: {
+    borderRadius: Radius.large,
+    borderWidth: 1.5,
+    padding: Spacing.three,
+    gap: Spacing.three,
+  },
+  guestBioHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  guestBioIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestBioBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+    minHeight: 46,
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.four,
+  },
+  guestBioBtnText: {
+    color: '#0d1f3c',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  menuBadgeWrap: {
+    paddingHorizontal: Spacing.two,
+    paddingVertical: 2,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    marginRight: Spacing.one,
+  },
 
   pressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
 });

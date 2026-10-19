@@ -115,7 +115,7 @@ export default function DonateScreen() {
   return (
     <FormScreen
       title="Support the mission"
-      subtitle="Your gift keeps Fr. Morson's ministry free and reaching more of the family — one faith, one family, one place.">
+      subtitle="Your gift keeps Fr. Morsin's ministry free and reaching more of the family — one faith, one family, one place.">
       {configQ.isLoading ? (
         <LoadingState />
       ) : configQ.isError || !config ? (

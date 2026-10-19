@@ -23,7 +23,7 @@ export function AppHeader() {
             All Catholic Media
           </ThemedText>
           <ThemedText themeColor="gold" style={styles.brandSubtitle}>
-            FR. MORSON LIVINGSTON
+            FR. MORSIN LIVINGSTON
           </ThemedText>
         </View>
       </Pressable>

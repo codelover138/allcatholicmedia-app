@@ -43,7 +43,7 @@ export default function GivingScreen() {
       refreshing={query.isRefetching && !query.isFetchingNextPage}
       onEndReached={() => query.hasNextPage && query.fetchNextPage()}
       loadingMore={query.isFetchingNextPage}
-      emptyMessage="You haven't made a gift yet. Every gift supports Fr. Morson's ministry."
+      emptyMessage="You haven't made a gift yet. Every gift supports Fr. Morsin's ministry."
       renderItem={(d) => <GivingRow donation={d} />}
     />
   );
