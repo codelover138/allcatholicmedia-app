@@ -37,6 +37,7 @@ function cleanHtmlText(html?: string | null): string | null {
 }
 
 export function ArticleDetailModal({ article, onClose }: ArticleDetailModalProps) {
+  console.log('[DEBUG_MODAL] ArticleDetailModal render, article:', article ? article.title : null);
   const theme = useTheme();
   const toggleSaveItem = useAppStore((state) => state.toggleSaveItem);
   const isItemSaved = useAppStore((state) => state.isItemSaved);

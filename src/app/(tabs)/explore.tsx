@@ -236,6 +236,7 @@ export default function ExploreScreen() {
     });
 
   const open = (item: ExploreItem) => {
+    console.log('[DEBUG_EXPLORE] open called for:', item.title, 'type:', item.type);
     if (item.type === 'read' || item.type === 'saints') {
       const articleObj: ArticleDTO = item.rawArticle || {
         id: Number(item.key.replace(/\D/g, '')) || 1,
@@ -246,6 +247,7 @@ export default function ExploreScreen() {
         published_at: null,
         categories: [{ id: 1, name: item.type === 'saints' ? 'Saints' : 'Spiritual Reflection' }],
       };
+      console.log('[DEBUG_EXPLORE] setting selectedArticle:', articleObj.id, articleObj.title);
       setSelectedArticle(articleObj);
       return;
     }
