@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { ArticleDetailHost } from '@/components/article-detail';
 import { AudioPlayerBar } from '@/components/audio-player-bar';
 import { LockGate } from '@/components/lock-gate';
 import { VideoPlayerModal } from '@/components/video-player-modal';
@@ -30,6 +31,7 @@ export default function RootLayout() {
         <LockGate />
         <AudioPlayerBar />
         <VideoPlayerModal />
+        <ArticleDetailHost />
       </ThemeProvider>
     </QueryClientProvider>
   );

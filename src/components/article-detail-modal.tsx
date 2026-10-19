@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { CatholicImagePlaceholder } from '@/components/catholic-image-placeholder';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { type ArticleDTO, resolveImageUrl } from '@/lib/app-content';
+import { appContentApi, slugFromUrl, type ArticleDTO, resolveImageUrl } from '@/lib/app-content';
 import { useAppStore } from '@/lib/app-store';
 
 type ArticleDetailModalProps = {
@@ -18,6 +19,23 @@ type ArticleDetailModalProps = {
 
 const DEFAULT_MODAL_HERO = 'https://images.unsplash.com/photo-1548625361-180800b55a30?auto=format&fit=crop&w=800&q=80';
 
+function cleanHtmlText(html?: string | null): string | null {
+  if (!html) return null;
+  return html
+    .replace(/<br\s*[\/]?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/h[1-6]>/gi, '\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export function ArticleDetailModal({ article, onClose }: ArticleDetailModalProps) {
   const theme = useTheme();
   const toggleSaveItem = useAppStore((state) => state.toggleSaveItem);
@@ -26,10 +44,25 @@ export function ArticleDetailModal({ article, onClose }: ArticleDetailModalProps
 
   const [fontSize, setFontSize] = useState<number>(16);
 
+  const isSaint =
+    article?.categories?.some((c) => c.name.toLowerCase().includes('saint')) ||
+    article?.url?.includes('/saints/');
+  const slug = (article as any)?.slug || (article?.url ? slugFromUrl(article.url) : null);
+
+  const detailQuery = useQuery({
+    queryKey: ['article-detail-modal', isSaint ? 'saint' : 'read', slug],
+    queryFn: () => {
+      if (!slug) return null;
+      return isSaint ? appContentApi.saintDetail(slug) : appContentApi.articleDetail(slug);
+    },
+    enabled: !!slug,
+    staleTime: 1000 * 60 * 10,
+  });
+
   if (!article) return null;
 
   const isSaved = isItemSaved(String(article.id), 'article');
-  const categoryNames = article.categories.map((c) => c.name).join(' · ') || 'Spiritual Reflection';
+  const categoryNames = article.categories?.map((c) => c.name).join(' · ') || 'Spiritual Reflection';
   const resolved = resolveImageUrl(article.image);
   const heroImageUrl =
     resolved &&
@@ -38,6 +71,9 @@ export function ArticleDetailModal({ article, onClose }: ArticleDetailModalProps
     !resolved.includes('10.0.2.2')
       ? resolved
       : DEFAULT_MODAL_HERO;
+
+  const rawContent = detailQuery.data?.data?.content;
+  const parsedContent = cleanHtmlText(rawContent);
 
   const handleToggleBookmark = () => {
     toggleSaveItem({
@@ -62,9 +98,14 @@ export function ArticleDetailModal({ article, onClose }: ArticleDetailModalProps
   };
 
   return (
-    <Modal visible animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={Boolean(article)}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+      statusBarTranslucent>
       <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
+        <Pressable style={styles.scrim} onPress={onClose} />
 
         <ThemedView variant="elevated" style={styles.container}>
           {/* Header Bar */}
@@ -96,6 +137,18 @@ export function ArticleDetailModal({ article, onClose }: ArticleDetailModalProps
                   </ThemedText>
                 </Pressable>
               </View>
+
+              {article.url ? (
+                <Pressable
+                  onPress={() => Linking.openURL(article.url)}
+                  style={({ pressed }) => [
+                    styles.actionBtn,
+                    { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+                    pressed && styles.pressed,
+                  ]}>
+                  <Ionicons name="open-outline" size={17} color={theme.accent} />
+                </Pressable>
+              ) : null}
 
               <Pressable
                 onPress={handleToggleBookmark}
@@ -179,7 +232,8 @@ export function ArticleDetailModal({ article, onClose }: ArticleDetailModalProps
                   styles.articleBodyText,
                   { fontSize, lineHeight: Math.round(fontSize * 1.6) },
                 ]}>
-                {article.description ||
+                {parsedContent ||
+                  article.description ||
                   `In today's holy reflection, Fr. Morsin Livingston reminds us of the profound peace and strength found in daily prayer and scripture meditation. As Catholics, we are called to live as beacons of faith, hope, and charity in our communities.
 
 Let us draw near to the sacraments and open our hearts to the grace of the Holy Spirit each day. Through faithful perseverance, we transform our daily labor into prayerful offering to God.`}
@@ -218,16 +272,18 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
+  scrim: {
+    flex: 1,
+    width: '100%',
   },
   container: {
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
     maxHeight: '92%',
+    height: '86%',
     borderTopLeftRadius: Radius.xlarge,
     borderTopRightRadius: Radius.xlarge,
     overflow: 'hidden',
@@ -288,7 +344,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scrollBody: {
-    maxHeight: 640,
+    flex: 1,
   },
   scrollInner: {
     padding: Spacing.four,

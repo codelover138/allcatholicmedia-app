@@ -27,9 +27,13 @@ const getSnapshot = () => current;
 export function openArticle(kind: Kind, ref: string | null | undefined, title?: string) {
   if (!ref) return;
   const isUrl = /^https?:\/\//i.test(ref);
-  const slug = isUrl ? slugFromUrl(ref) : ref;
+  const rawSlug = ref.includes('/') ? slugFromUrl(ref) : ref;
+  const slug = rawSlug ? rawSlug.replace(/\.html?$/i, '') : null;
   if (!slug) return;
-  current = { kind, slug, title, url: isUrl ? ref : undefined };
+  const url = isUrl
+    ? ref
+    : `https://allcatholicmedia.com/${kind === 'saints' ? 'saints' : 'blog'}/${slug}`;
+  current = { kind, slug, title, url };
   emit();
 }
 
@@ -112,6 +116,7 @@ export function ArticleDetailHost() {
         : appContentApi.articleDetail(cur!.slug),
     enabled: !!cur,
     staleTime: 1000 * 60 * 10,
+    retry: 1,
   });
 
   const detail = query.data?.data;
@@ -126,6 +131,23 @@ export function ArticleDetailHost() {
   const handleClose = () => {
     setCommentsOpen(false);
     closeArticle();
+  };
+
+  const handleShouldStartLoad = (req: any) => {
+    // Let sub-frames (YouTube/Vimeo embeds inside the article) load.
+    if (!req.isTopFrame) return true;
+    if (
+      req.url === ARTICLE_BASE_URL ||
+      req.url === 'about:blank' ||
+      req.url.startsWith('data:') ||
+      (externalUrl && req.url === externalUrl)
+    ) {
+      return true;
+    }
+    if (req.navigationType === 'click' && /^https?:\/\//i.test(req.url)) {
+      Linking.openURL(req.url);
+    }
+    return false;
   };
 
   return (
@@ -157,44 +179,34 @@ export function ArticleDetailHost() {
 
         {!cur ? null : query.isLoading ? (
           <LoadingState />
-        ) : query.isError || !detail || !html ? (
-          <ErrorState message="Could not load this page." onRetry={() => query.refetch()} />
-        ) : Platform.OS === 'web' ? (
-          <View style={styles.body}>
-            <iframe
-              title={heading}
-              width="100%"
-              height="100%"
-              style={{ border: 'none' }}
-              srcDoc={html}
+        ) : detail && html ? (
+          Platform.OS === 'web' ? (
+            <View style={styles.body}>
+              <iframe
+                title={heading}
+                width="100%"
+                height="100%"
+                style={{ border: 'none' }}
+                srcDoc={html}
+              />
+            </View>
+          ) : (
+            <WebView
+              style={styles.body}
+              originWhitelist={['https://*', 'about:*', 'data:*']}
+              source={{ html, baseUrl: ARTICLE_BASE_URL }}
+              onShouldStartLoadWithRequest={handleShouldStartLoad}
             />
-          </View>
-        ) : (
+          )
+        ) : externalUrl ? (
           <WebView
             style={styles.body}
-            originWhitelist={['https://*', 'about:*', 'data:*']}
-            source={{ html, baseUrl: ARTICLE_BASE_URL }}
-            onShouldStartLoadWithRequest={(req) => {
-              // Let sub-frames (YouTube/Vimeo embeds inside the article) load.
-              if (!req.isTopFrame) return true;
-              // The only top-frame load we permit is the article document itself.
-              if (
-                req.url === ARTICLE_BASE_URL ||
-                req.url === 'about:blank' ||
-                req.url.startsWith('data:')
-              ) {
-                return true;
-              }
-              // A user tap on a link goes out to the system browser; a
-              // script- or redirect-driven navigation (e.g. injected via CMS
-              // content) is refused so the in-app view can't be swapped for a
-              // look-alike page.
-              if (req.navigationType === 'click' && /^https?:\/\//i.test(req.url)) {
-                Linking.openURL(req.url);
-              }
-              return false;
-            }}
+            originWhitelist={['https://*', 'http://*', 'about:*', 'data:*']}
+            source={{ uri: externalUrl }}
+            onShouldStartLoadWithRequest={handleShouldStartLoad}
           />
+        ) : (
+          <ErrorState message="Could not load this page." onRetry={() => query.refetch()} />
         )}
       </View>
 

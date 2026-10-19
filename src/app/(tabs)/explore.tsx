@@ -6,14 +6,14 @@ import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
+import { ArticleDetailModal } from '@/components/article-detail-modal';
 import { EmptyState, ErrorState, LoadingState } from '@/components/query-state';
-import { openArticle } from '@/components/article-detail';
 import { ScreenBackground } from '@/components/screen-background';
 import { ThemedText } from '@/components/themed-text';
 import { useVideoPlayer } from '@/components/video-player';
 import { BottomTabInset, Fonts, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { appContentApi, mediaUrl } from '@/lib/app-content';
+import { appContentApi, mediaUrl, type ArticleDTO } from '@/lib/app-content';
 import { formatDuration, formatShortDate } from '@/lib/format';
 
 type ExploreType = 'watch' | 'listen' | 'read' | 'saints';
@@ -27,6 +27,7 @@ type ExploreItem = {
   fallbackHref: Href;
   image?: string | null;
   isVideo?: boolean;
+  rawArticle?: ArticleDTO;
 };
 
 const FILTERS: ('all' | ExploreType)[] = ['all', 'watch', 'listen', 'read', 'saints'];
@@ -71,6 +72,11 @@ export default function ExploreScreen() {
 
   const searching = debounced.length >= 2;
 
+  const [readPage, setReadPage] = useState(1);
+  const [extraReadArticles, setExtraReadArticles] = useState<any[]>([]);
+  const [isLoadingMoreRead, setIsLoadingMoreRead] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState<ArticleDTO | null>(null);
+
   const channelsQuery = useQuery({ queryKey: ['app', 'channels'], queryFn: appContentApi.channels });
   const listenQuery = useQuery({ queryKey: ['app', 'listen'], queryFn: () => appContentApi.listen() });
   const readQuery = useQuery({ queryKey: ['app', 'read'], queryFn: () => appContentApi.read() });
@@ -84,6 +90,30 @@ export default function ExploreScreen() {
 
   const browseQueries = [channelsQuery, listenQuery, readQuery, saintsQuery];
   const activeQueries = searching ? [searchQuery] : browseQueries;
+
+  const readMeta = readQuery.data?.data.meta;
+  const canLoadMoreRead = readMeta ? readPage < readMeta.last_page : false;
+
+  const loadMoreReadArticles = async () => {
+    if (isLoadingMoreRead || !canLoadMoreRead) return;
+    setIsLoadingMoreRead(true);
+    try {
+      const nextPage = readPage + 1;
+      const res = await appContentApi.read({ page: nextPage });
+      const nextArticles = res.data?.articles ?? [];
+      setExtraReadArticles((prev) => [...prev, ...nextArticles]);
+      setReadPage(nextPage);
+    } catch {
+      // Ignore load more errors or allow retry
+    } finally {
+      setIsLoadingMoreRead(false);
+    }
+  };
+
+  const allReadArticles = useMemo(() => {
+    const initial = readQuery.data?.data.articles ?? [];
+    return [...initial, ...extraReadArticles];
+  }, [readQuery.data, extraReadArticles]);
 
   const items = useMemo<ExploreItem[]>(() => {
     if (searching) {
@@ -125,6 +155,7 @@ export default function ExploreScreen() {
           url: a.url,
           fallbackHref: '/read' as const,
           image: mediaUrl(a.image),
+          rawArticle: a,
         })),
         ...d.saints.map((a) => ({
           key: `s${a.id}`,
@@ -134,6 +165,7 @@ export default function ExploreScreen() {
           url: a.url,
           fallbackHref: '/more' as const,
           image: mediaUrl(a.image),
+          rawArticle: a,
         })),
       ];
     }
@@ -162,14 +194,18 @@ export default function ExploreScreen() {
       image: mediaUrl(s.thumbnail),
     }));
 
-    const read = (readQuery.data?.data.articles ?? []).slice(0, 8).map((a) => ({
+    // If filtering specifically by read, show all loaded articles. Otherwise show top 8 in round robin.
+    const readArticlesSource = filter === 'read' ? allReadArticles : allReadArticles.slice(0, 8);
+
+    const read = readArticlesSource.map((a) => ({
       key: `r${a.id}`,
       type: 'read' as const,
       title: a.title,
       meta: joinMeta(a.categories?.[0]?.name ?? 'Read', formatShortDate(a.published_at)),
-      url: a.url,
+      url: a.url || (a as any).slug || (a.id ? String(a.id) : undefined),
       fallbackHref: '/read' as const,
       image: mediaUrl(a.image),
+      rawArticle: a,
     }));
 
     const saints = (saintsQuery.data?.data.saints ?? []).slice(0, 8).map((a) => ({
@@ -177,13 +213,14 @@ export default function ExploreScreen() {
       type: 'saints' as const,
       title: a.title,
       meta: joinMeta('Saint', a.categories?.[0]?.name ?? 'Feast Days'),
-      url: a.url,
+      url: a.url || (a as any).slug || (a.id ? String(a.id) : undefined),
       fallbackHref: '/more' as const,
       image: mediaUrl(a.image),
+      rawArticle: a,
     }));
 
-    return roundRobin<ExploreItem>(watch, read, listen, saints);
-  }, [searching, searchQuery.data, channelsQuery.data, listenQuery.data, readQuery.data, saintsQuery.data]);
+    return filter === 'read' ? read : roundRobin<ExploreItem>(watch, read, listen, saints);
+  }, [searching, filter, searchQuery.data, channelsQuery.data, listenQuery.data, allReadArticles, saintsQuery.data]);
 
   const filtered = filter === 'all' ? items : items.filter((i) => i.type === filter);
 
@@ -200,8 +237,16 @@ export default function ExploreScreen() {
 
   const open = (item: ExploreItem) => {
     if (item.type === 'read' || item.type === 'saints') {
-      if (item.url) openArticle(item.type, item.url, item.title);
-      else router.push(item.fallbackHref);
+      const articleObj: ArticleDTO = item.rawArticle || {
+        id: Number(item.key.replace(/\D/g, '')) || 1,
+        title: item.title,
+        description: null,
+        image: item.image ?? null,
+        url: item.url || '',
+        published_at: null,
+        categories: [{ id: 1, name: item.type === 'saints' ? 'Saints' : 'Spiritual Reflection' }],
+      };
+      setSelectedArticle(articleObj);
       return;
     }
     if (item.url) play(item.url, item.title);
@@ -276,9 +321,62 @@ export default function ExploreScreen() {
                 onOpen={() => open(item)}
               />
             ))}
+
+            {filter === 'read' ? (
+              <View style={styles.loadMoreSection}>
+                {canLoadMoreRead ? (
+                  <Pressable
+                    onPress={loadMoreReadArticles}
+                    disabled={isLoadingMoreRead}
+                    style={({ pressed }) => [
+                      styles.loadMoreButton,
+                      { borderColor: theme.gold, backgroundColor: theme.goldSoft },
+                      pressed && styles.pressed,
+                    ]}>
+                    <ThemedText style={styles.loadMoreButtonText}>
+                      {isLoadingMoreRead
+                        ? 'Loading reflections…'
+                        : `Load More Articles (Page ${readPage} of ${readMeta?.last_page ?? 1})`}
+                    </ThemedText>
+                  </Pressable>
+                ) : (
+                  <ThemedText type="small" themeColor="textSecondary" style={styles.caughtUpText}>
+                    ✦ You have loaded all recent Catholic reflections
+                  </ThemedText>
+                )}
+
+                <Pressable
+                  onPress={() => router.push('/read')}
+                  style={({ pressed }) => [
+                    styles.libraryCard,
+                    { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+                    pressed && styles.pressed,
+                  ]}>
+                  <ThemedText themeColor="gold" style={styles.libraryGlyph}>
+                    ▤
+                  </ThemedText>
+                  <View style={styles.libraryCopy}>
+                    <ThemedText style={styles.libraryTitle}>
+                      Open Full Reading Library & Categories
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      Homilies, Scripture meditations & teachings by Fr. Morsin Livingston
+                    </ThemedText>
+                  </View>
+                  <ThemedText themeColor="gold" style={styles.libraryArrow}>
+                    →
+                  </ThemedText>
+                </Pressable>
+              </View>
+            ) : null}
           </View>
         )}
       </ScrollView>
+
+      <ArticleDetailModal
+        article={selectedArticle}
+        onClose={() => setSelectedArticle(null)}
+      />
       </SafeAreaView>
     </ScreenBackground>
   );
@@ -325,7 +423,7 @@ function ExploreRow({
         ) : null}
       </View>
       <View style={styles.copy}>
-        <ThemedText themeColor="blue" style={styles.rowLabel}>
+        <ThemedText themeColor={meta.color} style={styles.rowLabel}>
           {meta.label}
         </ThemedText>
         <ThemedText style={styles.rowTitle} numberOfLines={2}>
@@ -334,8 +432,21 @@ function ExploreRow({
         <ThemedText type="small" themeColor="textSecondary" style={styles.rowMeta} numberOfLines={1}>
           {item.meta}
         </ThemedText>
+        {item.type === 'read' ? (
+          <View style={styles.readHintRow}>
+            <ThemedText themeColor="gold" style={styles.readHintText}>
+              Read Reflection →
+            </ThemedText>
+          </View>
+        ) : null}
       </View>
-      <Pressable onPress={onToggleSave} hitSlop={10} style={styles.bookmark}>
+      <Pressable
+        onPress={(e) => {
+          e.stopPropagation?.();
+          onToggleSave();
+        }}
+        hitSlop={12}
+        style={styles.bookmark}>
         <ThemedText themeColor={saved ? 'gold' : 'textSecondary'} style={styles.bookmarkGlyph}>
           {saved ? '★' : '☆'}
         </ThemedText>
@@ -428,6 +539,56 @@ const styles = StyleSheet.create({
   rowMeta: { fontSize: 11.5, lineHeight: 15 },
   bookmark: { padding: Spacing.one },
   bookmarkGlyph: { fontSize: 18, lineHeight: 20 },
-
   pressed: { opacity: 0.85, transform: [{ scale: 0.99 }] },
+  readHintRow: { marginTop: 3 },
+  readHintText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  loadMoreSection: {
+    marginTop: Spacing.two,
+    gap: Spacing.three,
+  },
+  loadMoreButton: {
+    paddingVertical: Spacing.three - 2,
+    paddingHorizontal: Spacing.four,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadMoreButtonText: {
+    color: '#d4af37',
+    fontSize: 13.5,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  caughtUpText: {
+    textAlign: 'center',
+    fontSize: 12,
+    marginVertical: Spacing.one,
+  },
+  libraryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: 12,
+    borderWidth: 1,
+    ...CARD_SHADOW,
+  },
+  libraryGlyph: {
+    fontSize: 24,
+    lineHeight: 28,
+  },
+  libraryCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  libraryTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#f3f6fa',
+  },
+  libraryArrow: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
 });
