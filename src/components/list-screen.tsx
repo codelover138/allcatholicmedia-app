@@ -98,7 +98,7 @@ export function ListScreen<T>({
               <View style={styles.footer}>
                 <ActivityIndicator color={theme.textSecondary} />
               </View>
-            ) : null
+            ) : undefined
           }
         />
       </SafeAreaView>

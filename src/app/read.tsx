@@ -271,7 +271,7 @@ export default function ReadScreen() {
               keyExtractor={(article) => String(article.id)}
               contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.six }}
               refreshControl={
-                <RefreshControl refreshing={readQuery.isRefetching} onRefresh={() => readQuery.refetch()} />
+                <RefreshControl refreshing={readQuery.isRefetching} onRefresh={() => { void readQuery.refetch(); }} />
               }
               ListHeaderComponent={
                 featuredArticle ? (
@@ -279,7 +279,7 @@ export default function ReadScreen() {
                     article={featuredArticle}
                     onSelect={() => setSelectedArticle(featuredArticle)}
                   />
-                ) : null
+                ) : undefined
               }
               renderItem={({ item }) => (
                 <ArticleRow article={item} onSelectArticle={() => setSelectedArticle(item)} />

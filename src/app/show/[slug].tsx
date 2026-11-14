@@ -106,7 +106,7 @@ export default function ShowDetailScreen() {
               <View style={styles.center}>
                 <ActivityIndicator color={theme.textSecondary} />
               </View>
-            ) : null
+            ) : undefined
           }
           renderItem={({ item }) => (
             <EpisodeRow

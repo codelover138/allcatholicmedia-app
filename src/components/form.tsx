@@ -22,7 +22,7 @@ type FieldProps = TextInputProps & {
   accessory?: React.ReactNode;
 };
 
-export const Field = forwardRef<TextInput, FieldProps>(function Field(
+export const Field = forwardRef<React.ComponentRef<typeof TextInput>, FieldProps>(function Field(
   { label, error, hint, accessory, style, ...rest },
   ref,
 ) {

@@ -97,7 +97,7 @@ export function CommentsSheet({ visible, kind, slug, onClose }: Props) {
                 <View style={styles.center}>
                   <ActivityIndicator color={theme.textSecondary} />
                 </View>
-              ) : null
+              ) : undefined
             }
             renderItem={({ item }) => <CommentRow comment={item} />}
           />

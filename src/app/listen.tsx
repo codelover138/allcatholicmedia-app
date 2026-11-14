@@ -82,7 +82,7 @@ export default function ListenScreen() {
               keyExtractor={(show) => show.slug}
               contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.six }}
               refreshControl={
-                <RefreshControl refreshing={listenQuery.isRefetching} onRefresh={() => listenQuery.refetch()} />
+                <RefreshControl refreshing={listenQuery.isRefetching} onRefresh={() => { void listenQuery.refetch(); }} />
               }
               renderItem={({ item }) => (
                 <ShowRow show={item} onSelectShow={() => setSelectedShow(item)} />

@@ -63,7 +63,7 @@ export function TabButton({
   const theme = useTheme();
 
   return (
-    <Pressable {...props} style={({ pressed }) => [styles.tabPressable, pressed && styles.pressed]}>
+    <Pressable {...(props as any)} style={({ pressed }) => [styles.tabPressable, pressed && styles.pressed]}>
       <View
         style={[
           styles.tabButtonView,

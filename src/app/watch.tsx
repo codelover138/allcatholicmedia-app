@@ -128,7 +128,7 @@ export default function WatchScreen() {
               <View style={styles.center}>
                 <ActivityIndicator color={theme.textSecondary} />
               </View>
-            ) : null
+            ) : undefined
           }
           renderItem={({ item }) => (
             <VideoRow video={item} onPress={() => playVideo(item.video_url, item.title)} />

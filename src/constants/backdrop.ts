@@ -9,7 +9,8 @@ import type { ImageSourcePropType } from 'react-native';
  * `{ uri: 'https://…' }`) to change it; set to `null` to fall back to the plain
  * navy ground with a gold glow.
  */
-export const BACKDROP_SOURCE: ImageSourcePropType | null = require('@/assets/images/basilica.jpg');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const BACKDROP_SOURCE: any = require('@/assets/images/basilica.jpg');
 
 /**
  * Photo credit, shown on the About screen — religious imagery should carry
