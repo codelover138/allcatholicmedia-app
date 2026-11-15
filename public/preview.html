@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All Catholic Media — Sacred Redesign Preview</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&display=swap');
+
+    :root {
+      --bg-midnight: #070D18;
+      --bg-cathedral: #0B1526;
+      --bg-card: rgba(16, 29, 52, 0.75);
+      --bg-card-hover: rgba(22, 40, 71, 0.9);
+      --gold-primary: #D4AF37;
+      --gold-bright: #F5D77F;
+      --gold-glow: rgba(212, 175, 55, 0.25);
+      --garnet-liturgical: #7B1832;
+      --garnet-glow: rgba(123, 24, 50, 0.35);
+      --vellum: #F7F5EE;
+      --vellum-dim: #C4C8D4;
+      --text-muted: #8E9BB0;
+      --border-subtle: rgba(212, 175, 55, 0.18);
+      --border-liturgical: rgba(212, 175, 55, 0.35);
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 10%, #11203A 0%, #070D18 80%);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--vellum);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px 10px;
+      overflow-x: hidden;
+    }
+
+    .font-cinzel { font-family: 'Cinzel', serif; }
+    .font-sacred { font-family: 'Playfair Display', Georgia, serif; }
+
+    /* Liturgical Gold Accents */
+    .gold-gradient-text {
+      background: linear-gradient(135deg, #FFF1C5 0%, #D4AF37 50%, #AA820A 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .candlelight-glow {
+      box-shadow: 0 0 30px rgba(212, 175, 55, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .card-sacred {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      transition: all 0.25s ease;
+    }
+
+    .card-sacred:hover {
+      border-color: var(--border-liturgical);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 0 15px rgba(212, 175, 55, 0.12);
+    }
+
+    /* Mobile Frame */
+    .mobile-frame {
+      max-width: 420px;
+      margin: 0 auto;
+      border-radius: 46px;
+      border: 10px solid #1E2838;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(212, 175, 55, 0.1);
+      background: #08101E;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 850px;
+    }
+
+    .mobile-screen-content {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    .mobile-screen-content::-webkit-scrollbar { display: none; }
+
+    .bottom-tab-bar {
+      background: rgba(8, 16, 30, 0.94);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(212, 175, 55, 0.15);
+    }
+
+    /* Sacred Cross Watermark */
+    .cross-bg {
+      background-image: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 60%);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Banner -->
+  <div class="max-w-4xl mx-auto mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[rgba(212,175,55,0.12)] border border-[rgba(212,175,55,0.25)] text-xs font-medium text-[#F5D77F] mb-3">
+      <span>✝</span>
+      <span class="tracking-widest uppercase font-cinzel text-[11px]">Sanctuary Experience · Mobile First Redesign</span>
+      <span>✝</span>
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-sacred font-bold gold-gradient-text mb-2">
+      All Catholic Media — Sacred Companion App
+    </h1>
+    <p class="text-sm text-[var(--text-muted)] max-w-xl mx-auto">
+      শান্ত, পবিত্র এবং শ্রদ্ধা উদ্রেককারী নকশা—যেখানে ক্যাথলিক বিশ্বাসীরা প্রতিদিনের মিসা, প্রার্থনা প্রাচীর, সাধুদের জীবনী এবং শান্তির পরশ খুঁজে পাবেন।
+    </p>
+
+    <!-- Screen Switcher Pills -->
+    <div class="flex items-center justify-center gap-2 mt-4 flex-wrap">
+      <button onclick="switchTab('home')" id="btn-home" class="tab-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-[#D4AF37] text-[#070D18] shadow-md transition-all">
+        Home (Sanctuary)
+      </button>
+      <button onclick="switchTab('explore')" id="btn-explore" class="tab-btn px-4 py-1.5 rounded-full text-xs font-medium bg-[#13223B] text-[#C4C8D4] hover:border-[#D4AF37] border border-transparent transition-all">
+        Explore (Media & Teachings)
+      </button>
+      <button onclick="switchTab('pray')" id="btn-pray" class="tab-btn px-4 py-1.5 rounded-full text-xs font-medium bg-[#13223B] text-[#C4C8D4] hover:border-[#D4AF37] border border-transparent transition-all">
+        Prayer Wall & Devotions
+      </button>
+      <button onclick="switchTab('community')" id="btn-community" class="tab-btn px-4 py-1.5 rounded-full text-xs font-medium bg-[#13223B] text-[#C4C8D4] hover:border-[#D4AF37] border border-transparent transition-all">
+        Community & Forums
+      </button>
+      <button onclick="switchTab('profile')" id="btn-profile" class="tab-btn px-4 py-1.5 rounded-full text-xs font-medium bg-[#13223B] text-[#C4C8D4] hover:border-[#D4AF37] border border-transparent transition-all">
+        Faith Profile
+      </button>
+    </div>
+  </div>
+
+  <!-- Responsive Mobile Shell Simulator -->
+  <div class="mobile-frame">
+
+    <!-- Status Bar & Dynamic Island -->
+    <div class="px-7 pt-3 pb-2 flex justify-between items-center text-xs text-[#8E9BB0] z-20">
+      <span class="font-semibold text-white text-[13px]">9:41</span>
+      <div class="w-24 h-4 bg-black rounded-full mx-auto"></div>
+      <div class="flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+        <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M17.778 8.222c-4.296-4.296-11.26-4.296-15.556 0A1 1 0 01.808 6.808c5.076-5.077 13.308-5.077 18.384 0a1 1 0 01-1.414 1.414zM14.95 11.05a7 7 0 00-9.9 0 1 1 0 01-1.414-1.414 9 9 0 0112.728 0 1 1 0 01-1.414 1.414zm-2.829 2.828a3 3 0 00-4.242 0 1 1 0 01-1.415-1.414 5 5 0 017.072 0 1 1 0 01-1.415 1.414zM9 16a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+        <div class="w-5 h-2.5 border border-white/60 rounded-[3px] p-0.5"><div class="h-full bg-white rounded-[1px] w-3/4"></div></div>
+      </div>
+    </div>
+
+    <!-- App Top Navigation Bar -->
+    <div class="px-5 py-3 border-b border-[rgba(212,175,55,0.12)] flex items-center justify-between bg-[rgba(8,16,30,0.85)] backdrop-filter backdrop-blur-md z-10">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#7B1832] flex items-center justify-center shadow-sm">
+          <span class="text-white text-sm font-cinzel">✝</span>
+        </div>
+        <div>
+          <span class="text-[10px] tracking-widest text-[#D4AF37] font-cinzel block uppercase">Fr. Morson Livingston</span>
+          <span class="text-xs font-sacred font-bold text-white tracking-wide">All Catholic Media</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="w-8 h-8 rounded-full bg-[#13223B] border border-[rgba(212,175,55,0.2)] flex items-center justify-center text-[#D4AF37] text-xs hover:bg-[#1A2E4E] transition-all" title="Audio Player Active">
+          <span>🎧</span>
+        </button>
+        <button class="w-8 h-8 rounded-full bg-[#13223B] border border-[rgba(212,175,55,0.2)] flex items-center justify-center text-[#D4AF37] text-xs hover:bg-[#1A2E4E] transition-all">
+          <span>🔔</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN SCROLLABLE CONTENT -->
+    <div class="mobile-screen-content cross-bg px-4 py-4 space-y-4" id="screen-container">
+
+      <!-- ================= SCREEN 1: HOME (SANCTUARY) ================= -->
+      <div id="tab-home" class="space-y-4">
+        
+        <!-- Daily Liturgical Season & Scripture Banner -->
+        <div class="card-sacred p-4 border-l-4 border-l-[#D4AF37] candlelight-glow relative overflow-hidden">
+          <div class="absolute -right-4 -bottom-4 text-6xl text-[rgba(212,175,55,0.06)] font-cinzel select-none">✝</div>
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-[10px] uppercase font-cinzel tracking-wider text-[#D4AF37]">Sunday, 33rd Week in Ordinary Time</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-[rgba(212,175,55,0.15)] text-[#F5D77F] border border-[rgba(212,175,55,0.3)]">Holy Gospel</span>
+          </div>
+          <h2 class="font-sacred text-base font-bold text-white mb-1.5 leading-snug">
+            “Heaven and earth will pass away, but my words will not pass away.”
+          </h2>
+          <p class="text-xs text-[var(--text-muted)] italic font-sacred">Mark 13:24-32 · Liturgical Reflection</p>
+        </div>
+
+        <!-- Live Mass Broadcast Card (Immersive) -->
+        <div class="card-sacred p-3.5 relative overflow-hidden group cursor-pointer border border-[#D4AF37]/30">
+          <div class="relative h-40 rounded-xl overflow-hidden bg-gradient-to-t from-[#060D1A] via-[#101D33] to-[#1E3050] flex flex-col justify-between p-3.5">
+            <!-- Background Image Simulation -->
+            <div class="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-overlay" style="background-image: url('https://images.unsplash.com/photo-1548625361-195fe578cb96?auto=format&fit=crop&w=600&q=80');"></div>
+            
+            <div class="flex justify-between items-start z-10">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#7B1832] text-white text-[10px] font-bold tracking-wide uppercase shadow-lg animate-pulse">
+                <span class="w-1.5 h-1.5 rounded-full bg-white"></span> LIVE NOW
+              </span>
+              <span class="text-[11px] text-[#F7F5EE] bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10 font-medium">
+                👁 1,420 Faithful Praying
+              </span>
+            </div>
+
+            <div class="z-10 mt-auto">
+              <span class="text-[11px] text-[#D4AF37] font-cinzel uppercase tracking-wider block">Daily Holy Sacrifice of the Mass</span>
+              <h3 class="text-sm font-sacred font-bold text-white drop-shadow-md">St. Peter's Cathedral · Main Altar</h3>
+              <div class="flex items-center gap-2 mt-2">
+                <button class="px-3 py-1 rounded-full bg-[#D4AF37] text-[#070D18] text-xs font-bold flex items-center gap-1.5 shadow-md">
+                  <span>▶</span> Watch Holy Mass
+                </button>
+                <button class="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs border border-white/20">
+                  Daily Readings
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Devotions Row (Rosary, Angelus, Confession Guide) -->
+        <div class="grid grid-cols-3 gap-2">
+          <div class="card-sacred p-2.5 text-center cursor-pointer hover:border-[#D4AF37]">
+            <span class="text-xl block mb-1">📿</span>
+            <span class="text-[11px] font-sacred font-bold text-white block">Holy Rosary</span>
+            <span class="text-[9px] text-[#D4AF37]">Glorious Mysteries</span>
+          </div>
+          <div class="card-sacred p-2.5 text-center cursor-pointer hover:border-[#D4AF37]">
+            <span class="text-xl block mb-1">🔔</span>
+            <span class="text-[11px] font-sacred font-bold text-white block">The Angelus</span>
+            <span class="text-[9px] text-[var(--text-muted)]">12:00 PM Prayer</span>
+          </div>
+          <div class="card-sacred p-2.5 text-center cursor-pointer hover:border-[#D4AF37]">
+            <span class="text-xl block mb-1">🕯️</span>
+            <span class="text-[11px] font-sacred font-bold text-white block">Prayer Wall</span>
+            <span class="text-[9px] text-[#D4AF37]">148 Needs</span>
+          </div>
+        </div>
+
+        <!-- Saint of the Day Card -->
+        <div class="card-sacred p-3.5 flex items-center gap-3">
+          <div class="w-14 h-14 rounded-full bg-[#18263F] border-2 border-[#D4AF37] flex-shrink-0 flex items-center justify-center text-xl shadow-inner">
+            <span>✨</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-[#D4AF37] font-cinzel uppercase">Saint of the Day</span>
+              <span class="text-[10px] text-[var(--text-muted)]">Memorial</span>
+            </div>
+            <h4 class="text-xs font-sacred font-bold text-white truncate">St. Albert the Great, Bishop & Doctor</h4>
+            <p class="text-[11px] text-[var(--text-muted)] line-clamp-1">Patron of natural sciences and teacher of St. Thomas Aquinas.</p>
+          </div>
+          <span class="text-[#D4AF37] text-xs">→</span>
+        </div>
+
+        <!-- Pastoral Homily Podcast (Expo Audio Integration) -->
+        <div class="card-sacred p-3.5">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[10px] font-cinzel text-[#D4AF37] uppercase tracking-wider">Latest Audio Homily</span>
+            <span class="text-[10px] text-[#7B1832] font-semibold bg-[#7B1832]/20 px-2 py-0.5 rounded border border-[#7B1832]/30">Episode 48</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button class="w-10 h-10 rounded-full bg-[#D4AF37] text-[#070D18] flex items-center justify-center text-base font-bold shadow-md hover:scale-105 transition-transform flex-shrink-0">
+              ▶
+            </button>
+            <div class="flex-1 min-w-0">
+              <h4 class="text-xs font-bold text-white truncate">Walking in Faith Through the Dark Night</h4>
+              <p class="text-[11px] text-[var(--text-muted)]">Fr. Morson Livingston · 24 mins</p>
+            </div>
+            <button class="text-sm text-[#D4AF37] p-1.5 rounded-full hover:bg-white/10" title="Download for offline listening">
+              ⬇
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= SCREEN 2: EXPLORE (CONTENT & MEDIA) ================= -->
+      <div id="tab-explore" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-sacred font-bold gold-gradient-text">Spiritual Teachings & Media</h2>
+          <span class="text-xs text-[#D4AF37]">Explore All</span>
+        </div>
+
+        <!-- Elegant Search Bar -->
+        <div class="relative">
+          <input type="text" placeholder="Search homilies, saints, scripture, prayers..." class="w-full bg-[#0E1A2E] border border-[rgba(212,175,55,0.2)] rounded-xl px-9 py-2 text-xs text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[#D4AF37] transition-all" />
+          <span class="absolute left-3 top-2.5 text-xs text-[var(--text-muted)]">🔍</span>
+        </div>
+
+        <!-- Liturgical Content Category Chips -->
+        <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none text-xs">
+          <span class="px-3 py-1 rounded-full bg-[#D4AF37] text-[#070D18] font-bold whitespace-nowrap">All Media</span>
+          <span class="px-3 py-1 rounded-full bg-[#13223B] border border-[rgba(212,175,55,0.18)] text-[var(--vellum)] hover:border-[#D4AF37] whitespace-nowrap">Sacred Readings</span>
+          <span class="px-3 py-1 rounded-full bg-[#13223B] border border-[rgba(212,175,55,0.18)] text-[var(--vellum)] hover:border-[#D4AF37] whitespace-nowrap">Audio Homilies</span>
+          <span class="px-3 py-1 rounded-full bg-[#13223B] border border-[rgba(212,175,55,0.18)] text-[var(--vellum)] hover:border-[#D4AF37] whitespace-nowrap">Live Channels</span>
+          <span class="px-3 py-1 rounded-full bg-[#13223B] border border-[rgba(212,175,55,0.18)] text-[var(--vellum)] hover:border-[#D4AF37] whitespace-nowrap">Holy Saints</span>
+        </div>
+
+        <!-- Sacred Content Cards -->
+        <div class="space-y-3">
+          
+          <!-- Article / Homily Card -->
+          <div class="card-sacred p-3 flex gap-3 cursor-pointer">
+            <div class="w-20 h-20 rounded-xl bg-cover bg-center flex-shrink-0 relative overflow-hidden" style="background-image: url('https://images.unsplash.com/photo-1544830206-8d59187ec9c2?auto=format&fit=crop&w=300&q=80');">
+              <span class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] text-[#D4AF37] font-semibold">READ</span>
+            </div>
+            <div class="flex-1 min-w-0 flex flex-col justify-between">
+              <div>
+                <span class="text-[10px] text-[#D4AF37] font-cinzel uppercase block">Spiritual Direction</span>
+                <h4 class="text-xs font-sacred font-bold text-white line-clamp-2">Finding Inner Peace Amid Modern World Distractions</h4>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+                <span>By Fr. Morson</span>
+                <span>8 min read · 💬 14</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Video Channel Card -->
+          <div class="card-sacred p-3 flex gap-3 cursor-pointer">
+            <div class="w-20 h-20 rounded-xl bg-cover bg-center flex-shrink-0 relative overflow-hidden" style="background-image: url('https://images.unsplash.com/photo-1519817650390-64a93db51149?auto=format&fit=crop&w=300&q=80');">
+              <div class="absolute inset-0 bg-black/30 flex items-center justify-center">
+                <span class="w-7 h-7 rounded-full bg-[#D4AF37] text-black flex items-center justify-center text-xs font-bold">▶</span>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0 flex flex-col justify-between">
+              <div>
+                <span class="text-[10px] text-[#F5D77F] font-cinzel uppercase block">Vatican Broadcast</span>
+                <h4 class="text-xs font-sacred font-bold text-white line-clamp-2">Sunday Angelus with the Holy Father from St. Peter's Square</h4>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+                <span>Vatican News Channel</span>
+                <span>15 mins ago</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sacred Art & Gallery Card -->
+          <div class="card-sacred p-3 flex gap-3 cursor-pointer">
+            <div class="w-20 h-20 rounded-xl bg-cover bg-center flex-shrink-0 relative overflow-hidden" style="background-image: url('https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?auto=format&fit=crop&w=300&q=80');">
+              <span class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] text-[#D4AF37] font-semibold">GALLERY</span>
+            </div>
+            <div class="flex-1 min-w-0 flex flex-col justify-between">
+              <div>
+                <span class="text-[10px] text-[#D4AF37] font-cinzel uppercase block">Sacred Architecture</span>
+                <h4 class="text-xs font-sacred font-bold text-white line-clamp-2">Historic Cathedrals and Altars of Europe & the Americas</h4>
+              </div>
+              <div class="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+                <span>32 High-Res Photos</span>
+                <span class="text-[#D4AF37]">View Album →</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= SCREEN 3: PRAYER WALL & DEVOTIONS ================= -->
+      <div id="tab-pray" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-sacred font-bold gold-gradient-text">Community Prayer Wall</h2>
+            <p class="text-xs text-[var(--text-muted)]">“Carry each other's burdens, and in this way you will fulfill the law of Christ.”</p>
+          </div>
+        </div>
+
+        <!-- Submit Intention Button -->
+        <button class="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B38C22] text-[#070D18] font-sacred font-bold text-xs flex items-center justify-center gap-2 shadow-lg hover:brightness-110 transition-all">
+          <span>🕯️</span>
+          <span>Submit a Prayer Intention to Fr. Morson & Community</span>
+        </button>
+
+        <!-- Filter Intentions -->
+        <div class="flex gap-2 overflow-x-auto text-xs pb-1">
+          <span class="px-2.5 py-1 rounded-full bg-[#D4AF37] text-black font-semibold whitespace-nowrap">All Prayers (148)</span>
+          <span class="px-2.5 py-1 rounded-full bg-[#13223B] border border-[rgba(212,175,55,0.2)] text-[var(--vellum)] whitespace-nowrap">For the Sick</span>
+          <span class="px-2.5 py-1 rounded-full bg-[#13223B] border border-[rgba(212,175,55,0.2)] text-[var(--vellum)] whitespace-nowrap">Family Peace</span>
+          <span class="px-2.5 py-1 rounded-full bg-[#13223B] border border-[rgba(212,175,55,0.2)] text-[var(--vellum)] whitespace-nowrap">Departed Souls</span>
+        </div>
+
+        <!-- Prayer Intention Cards with Intercession Counter -->
+        <div class="space-y-3">
+          
+          <div class="card-sacred p-3.5 border-l-2 border-l-[#D4AF37]">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-semibold text-white">Maria G.</span>
+              <span class="text-[10px] text-[#D4AF37] bg-[rgba(212,175,55,0.1)] px-2 py-0.5 rounded">For Healing</span>
+            </div>
+            <p class="text-xs text-[var(--vellum-dim)] font-sacred italic mb-3">
+              “Please pray for my mother undergoing cancer surgery tomorrow morning. We place her under the protective mantle of Our Lady of Lourdes.”
+            </p>
+            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+              <span class="text-[11px] text-[var(--text-muted)] flex items-center gap-1">
+                <span>🕯️</span> 243 faithful prayed
+              </span>
+              <button class="px-3 py-1 rounded-full bg-[#7B1832] hover:bg-[#96203F] text-white text-[11px] font-semibold flex items-center gap-1.5 transition-all">
+                <span>🙏</span> I Prayed For This
+              </button>
+            </div>
+          </div>
+
+          <div class="card-sacred p-3.5 border-l-2 border-l-[#D4AF37]">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-semibold text-white">Joseph K.</span>
+              <span class="text-[10px] text-[#D4AF37] bg-[rgba(212,175,55,0.1)] px-2 py-0.5 rounded">Vocations</span>
+            </div>
+            <p class="text-xs text-[var(--vellum-dim)] font-sacred italic mb-3">
+              “For our seminarians discerning Holy Orders, that they may be guided by the Holy Spirit with unwavering courage and purity of heart.”
+            </p>
+            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+              <span class="text-[11px] text-[var(--text-muted)] flex items-center gap-1">
+                <span>🕯️</span> 189 faithful prayed
+              </span>
+              <button class="px-3 py-1 rounded-full bg-[#182844] hover:bg-[#203458] border border-[rgba(212,175,55,0.3)] text-[#F5D77F] text-[11px] font-semibold flex items-center gap-1.5 transition-all">
+                <span>🙏</span> I Prayed For This
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= SCREEN 4: COMMUNITY & FORUMS ================= -->
+      <div id="tab-community" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-sacred font-bold gold-gradient-text">Faith Fellowship & Forum</h2>
+          <span class="text-xs text-[#D4AF37]">Guidelines</span>
+        </div>
+
+        <!-- Catholic Fellowship Feed / Forum Segments -->
+        <div class="flex rounded-lg bg-[#0E1A2E] p-1 border border-[rgba(212,175,55,0.18)] text-xs">
+          <button class="flex-1 py-1.5 rounded-md bg-[#D4AF37] text-black font-bold">Forum Topics</button>
+          <button class="flex-1 py-1.5 rounded-md text-[var(--text-muted)] hover:text-white">Ministry Groups</button>
+          <button class="flex-1 py-1.5 rounded-md text-[var(--text-muted)] hover:text-white">Community Feed</button>
+        </div>
+
+        <div class="space-y-2.5">
+          <div class="card-sacred p-3 cursor-pointer hover:border-[#D4AF37]">
+            <span class="text-[10px] text-[#D4AF37] uppercase font-cinzel">Liturgical Year Discussions</span>
+            <h4 class="text-xs font-bold text-white mt-0.5 mb-1">Preparing our homes for the upcoming Advent season</h4>
+            <div class="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+              <span>By Elizabeth M. · Active 5m ago</span>
+              <span class="text-[#D4AF37]">💬 32 Replies</span>
+            </div>
+          </div>
+
+          <div class="card-sacred p-3 cursor-pointer hover:border-[#D4AF37]">
+            <span class="text-[10px] text-[#D4AF37] uppercase font-cinzel">Scripture & Catechism</span>
+            <h4 class="text-xs font-bold text-white mt-0.5 mb-1">Understanding the Real Presence in the Holy Eucharist</h4>
+            <div class="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+              <span>Fr. Morson Commentary Series</span>
+              <span class="text-[#D4AF37]">💬 58 Replies</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SCREEN 5: PROFILE & SACRAMENTS ================= -->
+      <div id="tab-profile" class="space-y-4 hidden">
+        <div class="card-sacred p-4 text-center relative overflow-hidden">
+          <div class="w-16 h-16 rounded-full bg-[#18263F] border-2 border-[#D4AF37] mx-auto mb-2 flex items-center justify-center text-2xl shadow-md">
+            <span>👤</span>
+          </div>
+          <h3 class="text-sm font-sacred font-bold text-white">John Paul Benedict</h3>
+          <p class="text-xs text-[var(--text-muted)]">john.paul@example.com</p>
+          <div class="inline-block px-3 py-0.5 rounded-full bg-[rgba(212,175,55,0.15)] text-[#D4AF37] text-[10px] font-semibold mt-2 border border-[#D4AF37]/30">
+            ✝ Parishioner & Supporter
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div class="card-sacred p-3 text-center">
+            <span class="text-base text-[#D4AF37] font-bold block">12</span>
+            <span class="text-[10px] text-[var(--text-muted)]">Saved Homilies</span>
+          </div>
+          <div class="card-sacred p-3 text-center">
+            <span class="text-base text-[#D4AF37] font-bold block">4</span>
+            <span class="text-[10px] text-[var(--text-muted)]">Prayer Intentions</span>
+          </div>
+          <div class="card-sacred p-3 text-center">
+            <span class="text-base text-[#D4AF37] font-bold block">350</span>
+            <span class="text-[10px] text-[var(--text-muted)]">Rosaries Prayed</span>
+          </div>
+        </div>
+
+        <div class="card-sacred divide-y divide-white/5">
+          <div class="p-3 flex items-center justify-between cursor-pointer hover:bg-white/5">
+            <span class="text-xs text-white flex items-center gap-2"><span>🛡️</span> Biometric App Lock</span>
+            <span class="text-xs text-[#D4AF37]">Active (Face ID)</span>
+          </div>
+          <div class="p-3 flex items-center justify-between cursor-pointer hover:bg-white/5">
+            <span class="text-xs text-white flex items-center gap-2"><span>⬇</span> Offline Downloads & Audio</span>
+            <span class="text-xs text-[var(--text-muted)]">3 Episodes (84 MB)</span>
+          </div>
+          <div class="p-3 flex items-center justify-between cursor-pointer hover:bg-white/5">
+            <span class="text-xs text-white flex items-center gap-2"><span>🔔</span> Prayer & Angelus Reminders</span>
+            <span class="text-xs text-[var(--text-muted)]">12 PM & 6 PM</span>
+          </div>
+          <div class="p-3 flex items-center justify-between cursor-pointer hover:bg-white/5">
+            <span class="text-xs text-white flex items-center gap-2"><span>⛪</span> About Ministry & Fr. Morson</span>
+            <span class="text-xs text-[#D4AF37]">→</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM APP TAB BAR -->
+    <div class="bottom-tab-bar px-2 py-2 flex items-center justify-around z-20">
+      <button onclick="switchTab('home')" class="nav-tab flex flex-col items-center gap-0.5 text-[#D4AF37] text-center" id="nav-home">
+        <span class="text-lg">⛪</span>
+        <span class="text-[10px] font-semibold tracking-tight">Sanctuary</span>
+      </button>
+      <button onclick="switchTab('explore')" class="nav-tab flex flex-col items-center gap-0.5 text-[#8E9BB0] hover:text-[#D4AF37] text-center" id="nav-explore">
+        <span class="text-lg">📖</span>
+        <span class="text-[10px] font-semibold tracking-tight">Explore</span>
+      </button>
+      <button onclick="switchTab('pray')" class="nav-tab flex flex-col items-center gap-0.5 text-[#8E9BB0] hover:text-[#D4AF37] text-center" id="nav-pray">
+        <span class="text-lg">🕯️</span>
+        <span class="text-[10px] font-semibold tracking-tight">Pray</span>
+      </button>
+      <button onclick="switchTab('community')" class="nav-tab flex flex-col items-center gap-0.5 text-[#8E9BB0] hover:text-[#D4AF37] text-center" id="nav-community">
+        <span class="text-lg">🕊️</span>
+        <span class="text-[10px] font-semibold tracking-tight">Community</span>
+      </button>
+      <button onclick="switchTab('profile')" class="nav-tab flex flex-col items-center gap-0.5 text-[#8E9BB0] hover:text-[#D4AF37] text-center" id="nav-profile">
+        <span class="text-lg">👤</span>
+        <span class="text-[10px] font-semibold tracking-tight">Profile</span>
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      const tabs = ['home', 'explore', 'pray', 'community', 'profile'];
+      tabs.forEach(t => {
+        const el = document.getElementById('tab-' + t);
+        const nav = document.getElementById('nav-' + t);
+        const btn = document.getElementById('btn-' + t);
+
+        if (t === tabId) {
+          el.classList.remove('hidden');
+          nav.classList.add('text-[#D4AF37]');
+          nav.classList.remove('text-[#8E9BB0]');
+          if (btn) {
+            btn.classList.add('bg-[#D4AF37]', 'text-[#070D18]', 'font-semibold');
+            btn.classList.remove('bg-[#13223B]', 'text-[#C4C8D4]');
+          }
+        } else {
+          el.classList.add('hidden');
+          nav.classList.remove('text-[#D4AF37]');
+          nav.classList.add('text-[#8E9BB0]');
+          if (btn) {
+            btn.classList.remove('bg-[#D4AF37]', 'text-[#070D18]', 'font-semibold');
+            btn.classList.add('bg-[#13223B]', 'text-[#C4C8D4]');
+          }
+        }
+      });
+      document.getElementById('screen-container').scrollTop = 0;
+    }
+  </script>
+</body>
+</html>
